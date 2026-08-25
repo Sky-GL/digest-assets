@@ -508,16 +508,14 @@ function buildEmail(today, todayStr, allNews) {
       <td style="width:50%;vertical-align:top;padding-right:13px;">
         <div style="font-size:11px;font-weight:800;color:${ACCENT};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">インド — 全国</div>
         ${tocColumn(indiaNational ? [indiaNational] : [], ACCENT, null, false)}
+        <div style="font-size:11px;font-weight:800;color:${ACCENT};text-transform:uppercase;letter-spacing:0.08em;margin:18px 0 8px;">インド主要都市</div>
+        ${tocColumn(citySections, ACCENT, null, true)}
       </td>
       <td style="width:50%;vertical-align:top;padding-left:13px;">
         <div style="font-size:11px;font-weight:800;color:${ACCENT};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">デリー / グルガオン</div>
         ${tocColumn(delhiSection ? [delhiSection] : [], ACCENT, null, false)}
       </td>
     </tr></table>
-    <div style="border-top:1px solid ${CARD_BORDER};padding-top:14px;margin-bottom:16px;">
-      <div style="font-size:11px;font-weight:800;color:${ACCENT};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">インド主要都市</div>
-      ${tocColumn(citySections, ACCENT, null, true)}
-    </div>
     <div style="border-top:1px solid ${CARD_BORDER};padding-top:14px;">
       <div style="font-size:11px;font-weight:800;color:${NAVY};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">アジア・中東</div>
       ${tocColumn(otherSections, NAVY, 1)}

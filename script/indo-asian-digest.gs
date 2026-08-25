@@ -462,7 +462,7 @@ function buildEmail(today, todayStr, allNews) {
   const BODY_TEXT        = '#4a453f';
   const BODY_TEXT_2      = '#5c5750';
   const OTHER_CARD_BG    = '#f5f3ee';
-  const FOOTER_BG        = '#2f2822'; // 純黒だとクリーム地から浮くため温かみのある濃茶に
+  const FOOTER_BG        = OUTER_BG; // 黒面で終わると硬いので、外周と同じクリームで軽く閉じる
   const FONT_HEAD        = `'Archivo',Helvetica,Arial,sans-serif`;
   const FONT_BODY        = `Helvetica,Arial,sans-serif`;
 
@@ -489,10 +489,12 @@ function buildEmail(today, todayStr, allNews) {
 
   // 目次リンク1本分。idx は本文アンカーの番号なので、左右に振り分けても
   // 表示位置ではなく元のセクション内インデックスを渡すこと。
-  function tocLink(section, item, idx, tagColor, showTag) {
+  function tocLink(section, item, idx, tagColor, showTag, emphasis) {
     const tagHtml = showTag ? `<span style="font-size:10px;font-weight:800;color:${tagColor};margin-right:8px;">${escapeHtml(section.tocTag)}</span>` : '';
+    // emphasis: 全国のトップ記事2本だけ一段大きく太く出して、目次の頭を立たせる
+    const typo = emphasis ? 'font-size:15px;font-weight:700;line-height:1.5;' : 'font-size:13.5px;line-height:1.55;';
     return `
-          <a href="#${section.anchorPrefix}-${idx}" style="display:block;font-size:13.5px;line-height:1.55;color:${DARK_TEXT};text-decoration:none;padding:5px 0;border-bottom:1px solid ${CARD_BORDER};">
+          <a href="#${section.anchorPrefix}-${idx}" style="display:block;${typo}color:${DARK_TEXT};text-decoration:none;padding:5px 0;border-bottom:1px solid ${CARD_BORDER};">
             ${tagHtml}${escapeHtml(item.title)}
           </a>`;
   }
@@ -512,7 +514,7 @@ function buildEmail(today, todayStr, allNews) {
   function tocNationalSide(side) {
     if (!indiaNational) return '';
     return indiaNational.items
-      .map((item, i) => (i % 2 === side ? tocLink(indiaNational, item, i, ACCENT, false) : ''))
+      .map((item, i) => (i % 2 === side ? tocLink(indiaNational, item, i, ACCENT, false, i < 2) : ''))
       .join('');
   }
 
@@ -612,21 +614,6 @@ function buildEmail(today, todayStr, allNews) {
   const compressedIndiaBody = encodeAstralEntities(indiaBodyHtml.replace(/\s{2,}/g, ' ').replace(/>\s+</g, '><'));
   const compressedOtherBody = encodeAstralEntities(otherBodyHtml.replace(/\s{2,}/g, ' ').replace(/>\s+</g, '><'));
 
-  // フッター末端の装飾。単色の面で終わると唐突なので、三色の小ブロックを
-  // 1段ずらして重ねた織り模様（インドのテキスタイル風）でメールを締める。
-  // email クライアントで確実に出るよう、CSSパターンではなくテーブルセルで組む。
-  function patternBand() {
-    const palette = [SAFFRON, GREEN, NAVY];
-    const row = offset => {
-      let cells = '';
-      for (let i = 0; i < 24; i++) {
-        cells += `<td style="height:7px;background:${palette[(i + offset) % 3]};font-size:0;line-height:0;">&nbsp;</td>`;
-      }
-      return `<tr>${cells}</tr>`;
-    };
-    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">${row(0)}${row(2)}</table>`;
-  }
-
   function triColorBar(marginBottom) {
     return `<table style="width:100%;border-collapse:collapse;${marginBottom ? `margin-bottom:${marginBottom}px;` : ''}"><tr>
 <td style="width:33.33%;height:4px;background:${SAFFRON};font-size:0;line-height:0;">&nbsp;</td>
@@ -661,11 +648,10 @@ ${compressedOtherBody}
 </div>
 <div style="padding:26px 28px;background:${FOOTER_BG};">
 ${triColorBar(16)}
-<div style="font-family:${FONT_HEAD};font-weight:800;font-size:13px;color:#ffffff;letter-spacing:0.02em;margin-bottom:6px;">The Indo-Asian Digest</div>
-<div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,0.6);">DAISO India 社内配信専用。本メールはGoogle Apps Scriptにより毎日自動配信されています。リンクはGoogle News経由（過去30時間以内）でフィルタリング済みです。</div>
-<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:10px;">${CONFIG.APP_VERSION}</div>
+<div style="font-family:${FONT_HEAD};font-weight:800;font-size:13px;color:${DARK_TEXT};letter-spacing:0.02em;margin-bottom:6px;">The Indo-Asian Digest</div>
+<div style="font-size:12px;line-height:1.6;color:${BODY_TEXT_2};">DAISO India 社内配信専用。本メールはGoogle Apps Scriptにより毎日自動配信されています。リンクはGoogle News経由（過去30時間以内）でフィルタリング済みです。</div>
+<div style="font-size:10px;color:#8a8479;margin-top:10px;">${CONFIG.APP_VERSION}</div>
 </div>
-${patternBand()}
 </div>
 </body></html>`;
 

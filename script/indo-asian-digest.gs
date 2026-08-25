@@ -14,12 +14,12 @@ const CONFIG = {
 };
 
 const COUNTRIES_DEF = [
-  // ★ 本数配分: 全国 4本 / デリー・グルガオン 10本（据え置き）/ ムンバイ・コルカタ・チェンナイ 各 2本
+  // ★ 本数配分: 全国 6本 / デリー・グルガオン 6本 / ムンバイ・コルカタ・チェンナイ 各 2本（都市計 6本）
   // code/anchorPrefix/tocTag はデザイン刷新（バッジ表記・アンカーリンク・目次タグ）用
   // isCity: true の地域は「インド主要都市」として現地メディア中心に収集し、CITY_SCOPES で取材範囲を限定する
-  { name: "インド",                   label: "インド",                   subLabel: "India — National & Economy",       emoji: "🇮🇳", count: 4, isIndia: true,  domains: "economictimes.indiatimes.com, livemint.com, business-standard.com, thehindu.com, indianexpress.com, moneycontrol.com, inc42.com",
+  { name: "インド",                   label: "インド",                   subLabel: "India — National & Economy",       emoji: "🇮🇳", count: 6, isIndia: true,  domains: "economictimes.indiatimes.com, livemint.com, business-standard.com, thehindu.com, indianexpress.com, moneycontrol.com, inc42.com",
     code: "IN", anchorPrefix: "india", tocTag: "全国", sectionTitle: "インド — 全国" },
-  { name: "インド（デリー・グルガオン）", label: "インド — デリー / グルガオン", subLabel: "India — Delhi & Gurugram Region",    emoji: "🏙️", count: 10, isIndia: true,  domains: "timesofindia.indiatimes.com, hindustantimes.com, ndtv.com, indianexpress.com",
+  { name: "インド（デリー・グルガオン）", label: "インド — デリー / グルガオン", subLabel: "India — Delhi & Gurugram Region",    emoji: "🏙️", count: 6, isIndia: true,  domains: "timesofindia.indiatimes.com, hindustantimes.com, ndtv.com, indianexpress.com",
     code: "IN", anchorPrefix: "delhi", tocTag: "デリー", sectionTitle: "デリー / グルガオン" },
   { name: "インド（ムンバイ）",       label: "インド — ムンバイ",       subLabel: "India — Mumbai & MMR",           emoji: "🌆", count: 2, isIndia: true, isCity: true, domains: "mid-day.com, freepressjournal.in, mumbailive.com, hindustantimes.com, timesofindia.indiatimes.com, indianexpress.com",
     code: "IN", anchorPrefix: "mumbai", tocTag: "ムンバイ", sectionTitle: "ムンバイ" },
@@ -255,14 +255,16 @@ function buildRequest(endpoint, countryDef, todayISO, monthEN, recentHeadlines) 
       `(e.g. municipal news, city metro updates, city property markets, local infrastructure). ` +
       `Each of those cities has its own dedicated section in this digest.\n` +
       `- A story is acceptable only if it would matter equally to a reader in Delhi, Mumbai, Chennai and Kolkata alike — not to the residents of one city.\n\n` +
-      `CATEGORY BALANCE — there are only ${countryDef.count} slots, so pick the ${countryDef.count} biggest national stories of the day ` +
-      `and spread them across different categories rather than filling the section with economy/business:\n` +
-      `- Economy & Business (RBI, markets, corporate earnings, trade): 1–2 items\n` +
+      `CATEGORY BALANCE — with ${countryDef.count} slots, pick the ${countryDef.count} biggest national stories of the day ` +
+      `and spread them across these categories rather than filling the section with economy/business:\n` +
+      `- Economy & Business (RBI, markets, corporate earnings, trade): about 2 items\n` +
       `- Politics & Policy (central government, elections, diplomacy, legislation): about 1 item\n` +
       `- Technology & Startups (IT sector, unicorns, digital policy, AI): about 1 item\n` +
-      `- Society, Culture & Environment (education, healthcare, climate, social issues) or International Relations / Defense: about 1 item\n` +
-      `- Do NOT return more than 2 items from the Economy & Business category.\n` +
-      `- Do NOT return two items from the same category unless nothing else of national significance happened today.\n\n`
+      `- Society, Culture & Environment (education, healthcare, climate, social issues): about 1 item\n` +
+      `- International Relations / Defense: about 1 item\n` +
+      `- Do NOT return more than 3 items from the Economy & Business category.\n` +
+      `- ORDER MATTERS: sort the items by national significance, most important first. ` +
+      `The first two items are presented to readers as the day's top stories, so they must be the two biggest.\n\n`
     : '';
 
   const delhiExtra = countryDef.name === 'インド（デリー・グルガオン）'
@@ -273,13 +275,12 @@ function buildRequest(endpoint, countryDef, todayISO, monthEN, recentHeadlines) 
       `- Every story must be genuinely LOCAL to Delhi or Gurugram — something that would NOT be reported as a top story in Mumbai or Chennai.\n` +
       `- Search queries must include "Delhi" or "Gurugram" or "NCR" as explicit keywords.\n\n` +
       `CATEGORY BALANCE — the ${countryDef.count} items MUST be a mix across these local categories, not dominated by one type:\n` +
-      `- Governance & Infrastructure (Metro, roads, municipal projects): about 3 items\n` +
-      `- Corporate / Gurugram Business (office market, startups, local industry): about 2 items\n` +
-      `- Environment & Health (air quality, water, hospitals): about 2 items\n` +
+      `- Governance & Infrastructure (Metro, roads, municipal projects): about 2 items\n` +
+      `- Corporate / Gurugram Business (office market, startups, local industry): about 1 item\n` +
+      `- Environment & Health (air quality, water, hospitals): about 1 item\n` +
       `- Real Estate & Urban Development: about 1 item\n` +
-      `- Crime & Public Safety: about 1 item\n` +
-      `- Culture, Education & Society (local events, schools): about 1 item\n` +
-      `- Do NOT return more than 4 items from the Governance & Infrastructure category.\n\n`
+      `- Crime & Public Safety, or Culture, Education & Society (local events, schools): about 1 item\n` +
+      `- Do NOT return more than 2 items from the Governance & Infrastructure category.\n\n`
     : '';
 
   const cityScope = CITY_SCOPES[countryDef.anchorPrefix];
@@ -461,7 +462,7 @@ function buildEmail(today, todayStr, allNews) {
   const BODY_TEXT        = '#4a453f';
   const BODY_TEXT_2      = '#5c5750';
   const OTHER_CARD_BG    = '#f5f3ee';
-  const FOOTER_BG        = '#221f1c';
+  const FOOTER_BG        = '#2f2822'; // 純黒だとクリーム地から浮くため温かみのある濃茶に
   const FONT_HEAD        = `'Archivo',Helvetica,Arial,sans-serif`;
   const FONT_BODY        = `Helvetica,Arial,sans-serif`;
 
@@ -486,29 +487,45 @@ function buildEmail(today, todayStr, allNews) {
   const delhiSection    = indiaSections.find(s => s.anchorPrefix === 'delhi');
   const citySections    = indiaSections.filter(s => s.isCity);
 
+  // 目次リンク1本分。idx は本文アンカーの番号なので、左右に振り分けても
+  // 表示位置ではなく元のセクション内インデックスを渡すこと。
+  function tocLink(section, item, idx, tagColor, showTag) {
+    const tagHtml = showTag ? `<span style="font-size:10px;font-weight:800;color:${tagColor};margin-right:8px;">${escapeHtml(section.tocTag)}</span>` : '';
+    return `
+          <a href="#${section.anchorPrefix}-${idx}" style="display:block;font-size:13.5px;line-height:1.55;color:${DARK_TEXT};text-decoration:none;padding:5px 0;border-bottom:1px solid ${CARD_BORDER};">
+            ${tagHtml}${escapeHtml(item.title)}
+          </a>`;
+  }
+
   function tocColumn(sections, tagColor, maxItemsPerSection, showTag) {
     if (showTag === undefined) showTag = true;
     let html = '';
     sections.forEach(s => {
       const items = maxItemsPerSection ? s.items.slice(0, maxItemsPerSection) : s.items;
-      items.forEach((item, i) => {
-        const tagHtml = showTag ? `<span style="font-size:10px;font-weight:800;color:${tagColor};margin-right:8px;">${escapeHtml(s.tocTag)}</span>` : '';
-        html += `
-          <a href="#${s.anchorPrefix}-${i}" style="display:block;font-size:13.5px;line-height:1.55;color:${DARK_TEXT};text-decoration:none;padding:5px 0;border-bottom:1px solid ${CARD_BORDER};">
-            ${tagHtml}${escapeHtml(item.title)}
-          </a>`;
-      });
+      items.forEach((item, i) => { html += tocLink(s, item, i, tagColor, showTag); });
     });
     return html;
   }
 
+  // 全国は左右カラムに交互配置する（0本目→左、1本目→右）。
+  // これでトップ記事2本がそれぞれのカラムの先頭に立つ。
+  function tocNationalSide(side) {
+    if (!indiaNational) return '';
+    return indiaNational.items
+      .map((item, i) => (i % 2 === side ? tocLink(indiaNational, item, i, ACCENT, false) : ''))
+      .join('');
+  }
+
   const tocHtml = `
     <div style="font-family:${FONT_HEAD};font-weight:800;font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8479;margin-bottom:14px;">本日の見出し一覧</div>
+    <div style="font-size:11px;font-weight:800;color:${ACCENT};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">インド — 全国</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:18px;"><tr>
+      <td style="width:50%;vertical-align:top;padding-right:13px;">${tocNationalSide(0)}</td>
+      <td style="width:50%;vertical-align:top;padding-left:13px;">${tocNationalSide(1)}</td>
+    </tr></table>
     <table style="width:100%;border-collapse:collapse;margin-bottom:18px;"><tr>
       <td style="width:50%;vertical-align:top;padding-right:13px;">
-        <div style="font-size:11px;font-weight:800;color:${ACCENT};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">インド — 全国</div>
-        ${tocColumn(indiaNational ? [indiaNational] : [], ACCENT, null, false)}
-        <div style="font-size:11px;font-weight:800;color:${ACCENT};text-transform:uppercase;letter-spacing:0.08em;margin:18px 0 8px;">インド主要都市</div>
+        <div style="font-size:11px;font-weight:800;color:${ACCENT};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">インド主要都市</div>
         ${tocColumn(citySections, ACCENT, null, true)}
       </td>
       <td style="width:50%;vertical-align:top;padding-left:13px;">
@@ -595,6 +612,21 @@ function buildEmail(today, todayStr, allNews) {
   const compressedIndiaBody = encodeAstralEntities(indiaBodyHtml.replace(/\s{2,}/g, ' ').replace(/>\s+</g, '><'));
   const compressedOtherBody = encodeAstralEntities(otherBodyHtml.replace(/\s{2,}/g, ' ').replace(/>\s+</g, '><'));
 
+  // フッター末端の装飾。単色の面で終わると唐突なので、三色の小ブロックを
+  // 1段ずらして重ねた織り模様（インドのテキスタイル風）でメールを締める。
+  // email クライアントで確実に出るよう、CSSパターンではなくテーブルセルで組む。
+  function patternBand() {
+    const palette = [SAFFRON, GREEN, NAVY];
+    const row = offset => {
+      let cells = '';
+      for (let i = 0; i < 24; i++) {
+        cells += `<td style="height:7px;background:${palette[(i + offset) % 3]};font-size:0;line-height:0;">&nbsp;</td>`;
+      }
+      return `<tr>${cells}</tr>`;
+    };
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">${row(0)}${row(2)}</table>`;
+  }
+
   function triColorBar(marginBottom) {
     return `<table style="width:100%;border-collapse:collapse;${marginBottom ? `margin-bottom:${marginBottom}px;` : ''}"><tr>
 <td style="width:33.33%;height:4px;background:${SAFFRON};font-size:0;line-height:0;">&nbsp;</td>
@@ -633,6 +665,7 @@ ${triColorBar(16)}
 <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,0.6);">DAISO India 社内配信専用。本メールはGoogle Apps Scriptにより毎日自動配信されています。リンクはGoogle News経由（過去30時間以内）でフィルタリング済みです。</div>
 <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:10px;">${CONFIG.APP_VERSION}</div>
 </div>
+${patternBand()}
 </div>
 </body></html>`;
 

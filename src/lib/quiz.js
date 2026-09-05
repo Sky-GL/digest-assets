@@ -39,6 +39,8 @@ const makeChoiceQ = (target, pool, direction) => {
     kind: 'read2char',
     charId: target.id,
     prompt: label(target),
+    // マートラ(束縛形)は単独発音のカナ表記が誤解を招くため出さない
+    promptKana: target.group === 'matra' ? null : target.kana,
     promptSub: 'この読みの文字は?',
     speakChar: target,
     options: options.map((o) => ({ id: o.id, text: o.display || o.devanagari, big: true })),

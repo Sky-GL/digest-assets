@@ -27,12 +27,52 @@ export const LAST_STEP = STEPS[STEPS.length - 1].step
 // マートラ練習で使う子音(書きやすく頻出のもの)
 export const MATRA_BASE_IDS = ['ka', 'ga', 'ca', 'ja', 'ta', 'da', 'na', 'pa', 'ba', 'ma', 'ra', 'la', 'sa', 'ha']
 
+// 子音の行カナ [ア段, イ段, ウ段, エ段, オ段]。音節合成時のカナ近似に使う。
+const CONSONANT_ROW_KANA = {
+  ka: ['カ', 'キ', 'ク', 'ケ', 'コ'],
+  ga: ['ガ', 'ギ', 'グ', 'ゲ', 'ゴ'],
+  ca: ['チャ', 'チ', 'チュ', 'チェ', 'チョ'],
+  ja: ['ジャ', 'ジ', 'ジュ', 'ジェ', 'ジョ'],
+  ta: ['タ', 'ティ', 'トゥ', 'テ', 'ト'],
+  da: ['ダ', 'ディ', 'ドゥ', 'デ', 'ド'],
+  na: ['ナ', 'ニ', 'ヌ', 'ネ', 'ノ'],
+  pa: ['パ', 'ピ', 'プ', 'ペ', 'ポ'],
+  ba: ['バ', 'ビ', 'ブ', 'ベ', 'ボ'],
+  ma: ['マ', 'ミ', 'ム', 'メ', 'モ'],
+  ra: ['ラ', 'リ', 'ル', 'レ', 'ロ'],
+  la: ['ラ', 'リ', 'ル', 'レ', 'ロ'],
+  sa: ['サ', 'シ', 'ス', 'セ', 'ソ'],
+  ha: ['ハ', 'ヒ', 'フ', 'ヘ', 'ホ'],
+}
+
+// マートラごとのカナ変換ルール(行カナ配列 → 音節カナ)
+const MATRA_KANA_RULE = {
+  m_aa: (row) => row[0] + 'ー',
+  m_i: (row) => row[1],
+  m_ii: (row) => row[1] + 'ー',
+  m_u: (row) => row[2],
+  m_uu: (row) => row[2] + 'ー',
+  m_ri: (row) => row[2] + 'リ',
+  m_e: (row) => row[3] + 'ー',
+  m_ai: (row) => row[3] + 'ァー',
+  m_o: (row) => row[4] + 'ー',
+  m_au: (row) => row[4] + 'ァー',
+  m_am: (row) => row[0] + 'ン',
+  m_ah: (row) => row[0] + 'ハ',
+}
+
 /**
  * 子音 + マートラ の音節を組み立てる。
  * 通常のマートラは固有母音 a を置き換えるが、
  * アヌスヴァーラ(ं)/ヴィサルガ(ः)は a を残すので ka + ṃ = kaṃ となる。
+ * kana はカタカナ近似(MATRA_BASE_IDS の子音のみ対応、それ以外は null)。
  */
-export const syllable = (base, matra) => ({
-  devanagari: base.devanagari + matra.devanagari,
-  iast: matra.keepInherent ? base.iast + matra.iast : base.iast.replace(/a$/, '') + matra.iast,
-})
+export const syllable = (base, matra) => {
+  const row = CONSONANT_ROW_KANA[base.id]
+  const rule = MATRA_KANA_RULE[matra.id]
+  return {
+    devanagari: base.devanagari + matra.devanagari,
+    iast: matra.keepInherent ? base.iast + matra.iast : base.iast.replace(/a$/, '') + matra.iast,
+    kana: row && rule ? rule(row) : null,
+  }
+}

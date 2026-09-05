@@ -90,6 +90,7 @@ export default function Quiz({ title, accent = '#fbbf24', questions, onAnswer, o
 
       <div className="quiz-prompt">
         <span className={q.kind === 'read2char' ? 'prompt-text' : 'prompt-glyph'}>{q.prompt}</span>
+        {q.promptKana && <span className="prompt-kana">{q.promptKana}</span>}
         {(q.speakChar || q.speakText) && <SpeakButton char={q.speakChar} text={q.speakText} size="sm" />}
       </div>
 

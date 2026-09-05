@@ -67,7 +67,8 @@ export default function Flashcards({ step, onQuiz, onBack, onMatraLab }) {
             {c.rare && <span className="badge rare">稀に使用</span>}
             {c.series && <span className="badge series">{c.series}</span>}
             <div className="glyph">{c.display || c.devanagari}</div>
-            <div className="fc-hint">タップで読みを表示</div>
+            <div className="glyph-kana">{c.kana}</div>
+            <div className="fc-hint">タップで詳しい読みを表示</div>
             <SpeakButton char={c} />
           </div>
           <div className="fc-face fc-back">

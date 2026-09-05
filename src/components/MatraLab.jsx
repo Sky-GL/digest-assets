@@ -12,7 +12,7 @@ export default function MatraLab({ onBack, onQuiz }) {
 
   const base = charById(baseId)
   const matra = matras.find((m) => m.id === matraId)
-  const { devanagari: combined, iast: reading } = syllable(base, matra)
+  const { devanagari: combined, iast: reading, kana: readingKana } = syllable(base, matra)
   const consonant = base.iast.replace(/a$/, '')
 
   const pick = (setter, val, text) => {
@@ -38,6 +38,7 @@ export default function MatraLab({ onBack, onQuiz }) {
           <span className="slot-label">子音</span>
           <span className="slot-glyph">{base.devanagari}</span>
           <span className="slot-read">{consonant}</span>
+          <span className="slot-kana">{base.kana}</span>
         </div>
         <span className="lab-op">+</span>
         <div className="lab-slot">
@@ -50,6 +51,7 @@ export default function MatraLab({ onBack, onQuiz }) {
           <span className="slot-label">音節</span>
           <span className="slot-glyph big">{combined}</span>
           <span className="slot-read">{reading} {matra.ipa}</span>
+          {readingKana && <span className="slot-kana big">{readingKana}</span>}
         </div>
         <SpeakButton text={combined} label="音節を聞く" />
       </div>
@@ -68,7 +70,7 @@ export default function MatraLab({ onBack, onQuiz }) {
               onClick={() => pick(setBaseId, b.id, b.devanagari + matra.devanagari)}
             >
               <span>{b.devanagari}</span>
-              <em>{b.iast}</em>
+              <em>{b.iast} / {b.kana}</em>
             </button>
           ))}
         </div>
@@ -94,14 +96,18 @@ export default function MatraLab({ onBack, onQuiz }) {
         <h4>{base.devanagari} の全12音節</h4>
         <div className="syllable-grid">
           <button className="syllable" onClick={() => speakText(base.devanagari)}>
-            <span>{base.devanagari}</span><em>{base.iast}</em>
+            <span>{base.devanagari}</span><em>{base.iast}</em>{base.kana && <small>{base.kana}</small>}
           </button>
-          {matras.map((m) => (
-            <button key={m.id} className="syllable" onClick={() => speakText(syllable(base, m).devanagari)}>
-              <span>{syllable(base, m).devanagari}</span>
-              <em>{syllable(base, m).iast}</em>
-            </button>
-          ))}
+          {matras.map((m) => {
+            const s = syllable(base, m)
+            return (
+              <button key={m.id} className="syllable" onClick={() => speakText(s.devanagari)}>
+                <span>{s.devanagari}</span>
+                <em>{s.iast}</em>
+                {s.kana && <small>{s.kana}</small>}
+              </button>
+            )
+          })}
         </div>
       </div>
 

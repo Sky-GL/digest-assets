@@ -1,23 +1,32 @@
 import data from './devanagari-data.json'
 
-// Step ごとのメタ情報(タイトル・テーマ色・攻略メモ)
+/**
+ * Step ごとのメタ情報(タイトル・テーマ色・攻略メモ)。
+ *
+ * 五十音の「あいうえお→かさたなはまやらわ→濁音/半濁音/拗音」のように、
+ * (1) 母音の基本形 (2) その長音・複合 (3) 子音の代表音を行を横断して一巡
+ * (4)〜(8) 各行の有気音・濁音・鼻音を「代表音との重ね比較」付きで深掘り、
+ * という順で組んである。
+ */
 export const STEPS = [
-  { step: 1,  title: '母音(短)',        subtitle: 'まずは3つだけ',       emoji: '🌱', color: '#4ade80', tip: 'ヒンディー語の旅はここから。अ は「口を開かないア」。' },
-  { step: 2,  title: '母音(長)',        subtitle: '短音とペアで覚える',   emoji: '🌿', color: '#22d3ee', tip: '短母音に線や尾が足されると長母音。カード下の「重ね比較」で増えた部分が光ります。' },
-  { step: 3,  title: '母音(複合)',      subtitle: 'エー・オー系',         emoji: '🍃', color: '#38bdf8', tip: 'ऐ/औ は「アイ/アウ」ではなく口を広げた1音。形は ए/ओ に線が1本増えるだけ。' },
-  { step: 4,  title: '特殊母音記号',      subtitle: '点と2点',              emoji: '✨', color: '#a78bfa', tip: '点(ं)は鼻に抜く、2点(ः)は息を添える。' },
-  { step: 5,  title: '子音① 軟口蓋音',   subtitle: '喉の奥 k/g',           emoji: '🔥', color: '#fb923c', tip: '5つ1組のパターン(無気→有気→濁→濁有気→鼻音)を体で覚える。' },
-  { step: 6,  title: '子音② 硬口蓋音',   subtitle: 'ch/j',                 emoji: '⚡', color: '#facc15', tip: 'Step5と同じ並び。位置が前に移るだけ。' },
-  { step: 7,  title: '子音③ そり舌音',   subtitle: '最難関',               emoji: '🐍', color: '#f43f5e', tip: '舌先を上あごの奥に反らせる。Step8の歯音と「重ね比較」で形から区別すると早い。' },
-  { step: 8,  title: '子音④ 歯音',       subtitle: '日本語に近い',         emoji: '🦷', color: '#60a5fa', tip: '舌を上の歯の裏にべったり。日本語のタ行より前寄り。' },
-  { step: 9,  title: '子音⑤ 唇音',       subtitle: 'p/b/m',                emoji: '👄', color: '#f472b6', tip: '5行目にして最後の五音組。ここまでで25文字制覇。' },
-  { step: 10, title: '半母音',           subtitle: 'y/r/l/v',              emoji: '🌊', color: '#2dd4bf', tip: 'ボーナスステージ級に易しい。र の軽い巻き舌だけ意識。' },
-  { step: 11, title: '摩擦音',           subtitle: 'sh/s/h',               emoji: '💨', color: '#c084fc', tip: 'श と ष は現代語ではほぼ同じ音。形で見分ける。' },
-  { step: 12, title: 'マートラ(母音記号)', subtitle: '★最重要 — 単語が読める', emoji: '👑', color: '#fbbf24', tip: 'ि は左に書いて後ろで読む。ここを越えると単語が読めるようになる。' },
-  { step: 13, title: '頻出結合文字',      subtitle: 'ラスボス',             emoji: '🏆', color: '#e879f9', tip: '2つの子音が合体した形。よく見ると元の字が隠れている。' },
+  { step: 1, title: '母音(基本)',       subtitle: '「あいうえお」に相当', emoji: '🌱', color: '#4ade80', tip: 'まずはこの5つだけ。अ は「口を開かないア」。' },
+  { step: 2, title: '母音(長音・複合)', subtitle: '基本形に線が増えるだけ', emoji: '🌿', color: '#22d3ee', tip: 'カード下の「重ね比較」で、基本形からどこが増えたかが光って見える。' },
+  { step: 3, title: '特殊母音記号',      subtitle: '点と2点',              emoji: '✨', color: '#a78bfa', tip: '点(ं)は鼻に抜く、2点(ः)は息を添える。' },
+  { step: 4, title: '子音・代表音一巡', subtitle: '★「かさたなはまやらわ」に相当', emoji: '👑', color: '#fbbf24', tip: '各行の基本の子音を1つずつ、五十音のように一気に一巡する。ここが最初の山場。' },
+  { step: 5, title: 'क行の深掘り',      subtitle: '喉の奥 k/g/kh/gh',      emoji: '🔥', color: '#fb923c', tip: 'क に息や濁りを足していく。カード下でक との重ね比較を見て関連づける。' },
+  { step: 6, title: 'च行の深掘り',      subtitle: 'ch/j',                 emoji: '⚡', color: '#facc15', tip: 'क行と同じパターン。च に息や濁りを足すだけ。' },
+  { step: 7, title: 'ट行の深掘り',      subtitle: 'そり舌・最難関',        emoji: '🐍', color: '#f43f5e', tip: 'ट に息や濁りを足す。歯音の ट行 と t行 は「重ね比較」で形からも区別する。' },
+  { step: 8, title: 'त行の深掘り',      subtitle: '日本語に近い歯音',      emoji: '🦷', color: '#60a5fa', tip: 'त に息や濁りを足す。न はStep4で既に覚えている。' },
+  { step: 9, title: 'प行+摩擦音の深掘り', subtitle: 'p/b/bh + そり舌のsh', emoji: '👄', color: '#f472b6', tip: 'प に息や濁りを足す。ここで全子音が出そろう。' },
+  { step: 10, title: 'マートラ(母音記号)', subtitle: '★最重要 — 単語が読める', emoji: '📖', color: '#fbbf24', tip: 'ि は左に書いて後ろで読む。ここを越えると単語が読めるようになる。' },
+  { step: 11, title: '頻出結合文字',      subtitle: 'ラスボス',             emoji: '🏆', color: '#e879f9', tip: '2つの子音が合体した形。よく見ると元の字が隠れている。' },
 ]
 
 export const ALL_CHARS = data.characters
+
+// マートラ・結合文字の Step 番号(他ファイルからのハードコード参照をここに集約)
+export const MATRA_STEP = STEPS.find((s) => s.title.startsWith('マートラ')).step
+export const CONJUNCT_STEP = STEPS[STEPS.length - 1].step
 
 export const charsOfStep = (step) => ALL_CHARS.filter((c) => c.step === step)
 export const charById = (id) => ALL_CHARS.find((c) => c.id === id)

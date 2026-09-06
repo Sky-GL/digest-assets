@@ -1,4 +1,4 @@
-import { charsOfStep, ALL_CHARS, MATRA_BASE_IDS, charById, syllable } from '../data/steps'
+import { charsOfStep, ALL_CHARS, MATRA_BASE_IDS, MATRA_STEP, charById, syllable } from '../data/steps'
 import { weightedPick } from './srs'
 
 const shuffle = (arr) => {
@@ -49,9 +49,9 @@ const makeChoiceQ = (target, pool, direction) => {
   }
 }
 
-// Step12専用: 子音 + マートラ = 読み の組み合わせ問題
+// マートラStep専用: 子音 + マートラ = 読み の組み合わせ問題
 const makeMatraQ = () => {
-  const matras = charsOfStep(12)
+  const matras = charsOfStep(MATRA_STEP)
   const matra = matras[Math.floor(Math.random() * matras.length)]
   const base = charById(MATRA_BASE_IDS[Math.floor(Math.random() * MATRA_BASE_IDS.length)])
   const { devanagari: combined, iast: correct } = syllable(base, matra)
@@ -79,7 +79,7 @@ export const buildStepQuiz = (step, stats = {}, count = 10) => {
   const chars = charsOfStep(step)
   const pool = chars.length >= 4 ? chars : ALL_CHARS.filter((c) => c.step <= step)
 
-  if (step === 12) {
+  if (step === MATRA_STEP) {
     // マートラは組み合わせ問題を重点出題(6割)
     const qs = []
     const n = Math.max(count, 12)
@@ -109,7 +109,7 @@ export const buildReviewQuiz = (unlockedStep, stats = {}, count = 12) => {
   const targets = weightedPick(learned, stats, Math.min(count, learned.length))
   return shuffle(
     targets.map((t, i) =>
-      t.step === 12 && i % 2 === 0 ? makeMatraQ() : makeChoiceQ(t, learned, i % 2 ? 'char2read' : 'read2char')
+      t.step === MATRA_STEP && i % 2 === 0 ? makeMatraQ() : makeChoiceQ(t, learned, i % 2 ? 'char2read' : 'read2char')
     )
   )
 }

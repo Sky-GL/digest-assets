@@ -1,13 +1,15 @@
 const KEY = 'devanagari-quest-v1'
+const CURRENT_VERSION = 2 // v2: カリキュラムを「代表音を先に一巡→深掘り」の五十音方式に再編(Step構成が変わったため)
 
 export const emptyProgress = () => ({
-  version: 1,
+  version: CURRENT_VERSION,
   xp: 0,
   unlockedStep: 1,
   steps: {},   // { [step]: { cleared, bestScore, stars, plays } }
   chars: {},   // { [id]: { correct, wrong, lastSeen, streak } }
   streak: { count: 0, lastDate: null },
   bestCombo: 0,
+  curriculumMigrated: false, // v1→v2でStep進捗をリセットしたことを一度だけ通知するためのフラグ
 })
 
 export const loadProgress = () => {
@@ -15,11 +17,27 @@ export const loadProgress = () => {
     const raw = localStorage.getItem(KEY)
     if (!raw) return emptyProgress()
     const parsed = JSON.parse(raw)
-    return { ...emptyProgress(), ...parsed }
+    const merged = { ...emptyProgress(), ...parsed }
+
+    if ((parsed.version || 1) < CURRENT_VERSION) {
+      // カリキュラム再編でStep番号の意味が変わったため、Step関連だけリセットする。
+      // 文字ごとの正誤統計(chars)はcharId基準で変わらないので引き継ぐ。
+      return {
+        ...merged,
+        version: CURRENT_VERSION,
+        unlockedStep: 1,
+        steps: {},
+        curriculumMigrated: true,
+      }
+    }
+    return merged
   } catch {
     return emptyProgress()
   }
 }
+
+/** 移行通知バナーを閉じた後に呼び、二度と出さないようにする */
+export const acknowledgeMigration = (progress) => ({ ...progress, curriculumMigrated: false })
 
 export const saveProgress = (p) => {
   try {

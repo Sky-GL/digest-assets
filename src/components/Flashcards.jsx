@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { charsOfStep, stepMeta } from '../data/steps'
+import { charsOfStep, stepMeta, MATRA_STEP } from '../data/steps'
 import { pairsOf } from '../data/pairs'
 import SpeakButton from './SpeakButton'
 import GlyphDiff from './GlyphDiff'
@@ -9,6 +9,7 @@ const PAIR_TITLE = {
   length: '短音と長音を重ねて見る',
   matra: '長短マートラを重ねて見る',
   lookalike: 'そっくりな字と重ねて見る',
+  derived: '元の字と重ねて見る',
 }
 
 export default function Flashcards({ step, onQuiz, onBack, onMatraLab }) {
@@ -128,7 +129,7 @@ export default function Flashcards({ step, onQuiz, onBack, onMatraLab }) {
       )}
 
       <div className="cta-row">
-        {step === 12 && (
+        {step === MATRA_STEP && (
           <button className="btn secondary" onClick={onMatraLab}>🧪 マートラ組み立て練習</button>
         )}
         <button className={`btn primary big ${allSeen ? 'pulse' : ''}`} onClick={onQuiz}>

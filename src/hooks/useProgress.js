@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { loadProgress, saveProgress, clearProgress, touchStreak } from '../lib/storage'
+import { loadProgress, saveProgress, clearProgress, touchStreak, acknowledgeMigration } from '../lib/storage'
 import { LAST_STEP } from '../data/steps'
 
 export const XP_PER_LEVEL = 120
@@ -73,5 +73,9 @@ export function useProgress() {
     })
   }, [])
 
-  return { progress, recordAnswer, finishStep, noteCombo, reset }
+  const dismissMigration = useCallback(() => {
+    setProgress((p) => acknowledgeMigration(p))
+  }, [])
+
+  return { progress, recordAnswer, finishStep, noteCombo, reset, dismissMigration }
 }

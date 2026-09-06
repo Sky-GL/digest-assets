@@ -6,10 +6,10 @@ import Quiz from './components/Quiz'
 import MatraLab from './components/MatraLab'
 import { useProgress } from './hooks/useProgress'
 import { buildStepQuiz, buildReviewQuiz } from './lib/quiz'
-import { stepMeta } from './data/steps'
+import { stepMeta, MATRA_STEP } from './data/steps'
 
 export default function App() {
-  const { progress, recordAnswer, finishStep, noteCombo, reset } = useProgress()
+  const { progress, recordAnswer, finishStep, noteCombo, reset, dismissMigration } = useProgress()
   // view: { name: 'map' | 'cards' | 'quiz' | 'lab' | 'review', step?, questions? }
   const [view, setView] = useState({ name: 'map' })
 
@@ -31,6 +31,16 @@ export default function App() {
   return (
     <div className="app">
       <HUD progress={progress} onHome={goMap} onReset={handleReset} />
+      {progress.curriculumMigrated && (
+        <div className="migration-banner">
+          <span>
+            📚 カリキュラムを「代表音を先に一巡してから深掘りする」構成に整理しました。
+            Stepの並びが変わったため、Stepの進捗(アンロック状況)をリセットしています。
+            文字ごとの正誤記録とXPはそのまま引き継いでいます。
+          </span>
+          <button className="btn ghost sm" onClick={dismissMigration}>閉じる</button>
+        </div>
+      )}
       <main>
         {view.name === 'map' && (
           <StepMap
@@ -50,7 +60,7 @@ export default function App() {
         )}
 
         {view.name === 'lab' && (
-          <MatraLab onBack={() => setView({ name: 'cards', step: 12 })} onQuiz={() => startStepQuiz(12)} />
+          <MatraLab onBack={() => setView({ name: 'cards', step: MATRA_STEP })} onQuiz={() => startStepQuiz(MATRA_STEP)} />
         )}
 
         {view.name === 'quiz' && (

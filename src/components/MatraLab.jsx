@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { charsOfStep, charById, MATRA_BASE_IDS, syllable } from '../data/steps'
+import { charsOfStep, charById, MATRA_BASE_IDS, MATRA_STEP, syllable } from '../data/steps'
 import { speakText } from '../lib/speech'
 import SpeakButton from './SpeakButton'
 
-// Step12専用: 子音 × マートラ を自由に組み合わせて読みを確認する実験室
+// マートラStep専用: 子音 × マートラ を自由に組み合わせて読みを確認する実験室
 export default function MatraLab({ onBack, onQuiz }) {
-  const matras = charsOfStep(12)
+  const matras = charsOfStep(MATRA_STEP)
   const bases = MATRA_BASE_IDS.map(charById)
   const [baseId, setBaseId] = useState('ka')
   const [matraId, setMatraId] = useState('m_aa')

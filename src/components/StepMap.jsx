@@ -16,7 +16,7 @@ export default function StepMap({ progress, onSelect, onReview }) {
     <div className="stepmap">
       <div className="map-header">
         <h1>学習マップ</h1>
-        <p>母音 → 子音(喉の奥から唇へ)の順に進みます。Stepクイズで80%以上正解すると次が開放。</p>
+        <p>母音の基本形→子音の代表音(「かさたなはまやらわ」相当)を先に一巡→各行を深掘り、の順に進みます。Stepクイズで80%以上正解すると次が開放。</p>
       </div>
 
       <div className="review-banner">

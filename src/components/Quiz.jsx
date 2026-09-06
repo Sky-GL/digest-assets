@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { stepMeta } from '../data/steps'
+import { stepMeta, charById } from '../data/steps'
 import SpeakButton from './SpeakButton'
+import GlyphDiff from './GlyphDiff'
 
 export default function Quiz({ title, accent = '#fbbf24', questions, onAnswer, onFinish, onBack, onRetry }) {
   const [i, setI] = useState(0)
@@ -109,6 +110,13 @@ export default function Quiz({ title, accent = '#fbbf24', questions, onAnswer, o
         <div className={`feedback ${picked === q.answerId ? 'ok' : 'ng'}`}>
           <strong>{picked === q.answerId ? '正解!' : '惜しい!'}</strong>
           {q.explain && <p>{q.explain}</p>}
+          {/* 誤答時は「選んだ字」と「正解」を重ねて、どこで間違えたかを見せる */}
+          {picked !== q.answerId && charById(picked) && charById(q.answerId) && (
+            <div className="feedback-diff">
+              <p className="fd-title">選んだ字と正解を重ねると…</p>
+              <GlyphDiff a={charById(picked)} b={charById(q.answerId)} size={66} compact />
+            </div>
+          )}
           <button className="btn primary" onClick={next} autoFocus>
             {i + 1 >= total ? '結果を見る' : '次へ →'}
           </button>

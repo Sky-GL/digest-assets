@@ -1,0 +1,17 @@
+{
+  "name": "デーヴァナーガリー・クエスト",
+  "short_name": "Devanagari Quest",
+  "description": "ヒンディー語のデーヴァナーガリー文字62字を Step1〜13 で順に学ぶ学習アプリ",
+  "lang": "ja",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#150e28",
+  "theme_color": "#1b1030",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/favicon-mask.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

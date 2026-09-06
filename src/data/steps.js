@@ -3,12 +3,12 @@ import data from './devanagari-data.json'
 // Step ごとのメタ情報(タイトル・テーマ色・攻略メモ)
 export const STEPS = [
   { step: 1,  title: '母音(短)',        subtitle: 'まずは3つだけ',       emoji: '🌱', color: '#4ade80', tip: 'ヒンディー語の旅はここから。अ は「口を開かないア」。' },
-  { step: 2,  title: '母音(長)',        subtitle: '短音とペアで覚える',   emoji: '🌿', color: '#22d3ee', tip: '短母音に線や尾が足されると長母音。形の差分に注目。' },
-  { step: 3,  title: '母音(複合)',      subtitle: 'エー・オー系',         emoji: '🍃', color: '#38bdf8', tip: 'ऐ/औ は「アイ/アウ」ではなく口を広げた1音。' },
+  { step: 2,  title: '母音(長)',        subtitle: '短音とペアで覚える',   emoji: '🌿', color: '#22d3ee', tip: '短母音に線や尾が足されると長母音。カード下の「重ね比較」で増えた部分が光ります。' },
+  { step: 3,  title: '母音(複合)',      subtitle: 'エー・オー系',         emoji: '🍃', color: '#38bdf8', tip: 'ऐ/औ は「アイ/アウ」ではなく口を広げた1音。形は ए/ओ に線が1本増えるだけ。' },
   { step: 4,  title: '特殊母音記号',      subtitle: '点と2点',              emoji: '✨', color: '#a78bfa', tip: '点(ं)は鼻に抜く、2点(ः)は息を添える。' },
   { step: 5,  title: '子音① 軟口蓋音',   subtitle: '喉の奥 k/g',           emoji: '🔥', color: '#fb923c', tip: '5つ1組のパターン(無気→有気→濁→濁有気→鼻音)を体で覚える。' },
   { step: 6,  title: '子音② 硬口蓋音',   subtitle: 'ch/j',                 emoji: '⚡', color: '#facc15', tip: 'Step5と同じ並び。位置が前に移るだけ。' },
-  { step: 7,  title: '子音③ そり舌音',   subtitle: '最難関',               emoji: '🐍', color: '#f43f5e', tip: '舌先を上あごの奥に反らせる。Step8の歯音と聞き比べるのがコツ。' },
+  { step: 7,  title: '子音③ そり舌音',   subtitle: '最難関',               emoji: '🐍', color: '#f43f5e', tip: '舌先を上あごの奥に反らせる。Step8の歯音と「重ね比較」で形から区別すると早い。' },
   { step: 8,  title: '子音④ 歯音',       subtitle: '日本語に近い',         emoji: '🦷', color: '#60a5fa', tip: '舌を上の歯の裏にべったり。日本語のタ行より前寄り。' },
   { step: 9,  title: '子音⑤ 唇音',       subtitle: 'p/b/m',                emoji: '👄', color: '#f472b6', tip: '5行目にして最後の五音組。ここまでで25文字制覇。' },
   { step: 10, title: '半母音',           subtitle: 'y/r/l/v',              emoji: '🌊', color: '#2dd4bf', tip: 'ボーナスステージ級に易しい。र の軽い巻き舌だけ意識。' },

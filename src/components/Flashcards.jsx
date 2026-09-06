@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react'
 import { charsOfStep, stepMeta } from '../data/steps'
+import { pairsOf } from '../data/pairs'
 import SpeakButton from './SpeakButton'
+import GlyphDiff from './GlyphDiff'
 import { speak } from '../lib/speech'
+
+const PAIR_TITLE = {
+  length: '短音と長音を重ねて見る',
+  matra: '長短マートラを重ねて見る',
+  lookalike: 'そっくりな字と重ねて見る',
+}
 
 export default function Flashcards({ step, onQuiz, onBack, onMatraLab }) {
   const meta = stepMeta(step)
@@ -9,7 +17,10 @@ export default function Flashcards({ step, onQuiz, onBack, onMatraLab }) {
   const [idx, setIdx] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [seen, setSeen] = useState(() => new Set([0]))
+  const [pairIdx, setPairIdx] = useState(0)
   const c = chars[idx]
+  const pairs = pairsOf(c.id)
+  const pair = pairs[Math.min(pairIdx, pairs.length - 1)]
 
   // カード切替時に自動で発音(学習効率が上がる)
   useEffect(() => {
@@ -21,6 +32,7 @@ export default function Flashcards({ step, onQuiz, onBack, onMatraLab }) {
     const next = Math.min(Math.max(idx + d, 0), chars.length - 1)
     setIdx(next)
     setFlipped(false)
+    setPairIdx(0)
     setSeen((s) => new Set(s).add(next))
   }
 
@@ -54,7 +66,7 @@ export default function Flashcards({ step, onQuiz, onBack, onMatraLab }) {
           <button
             key={ch.id}
             className={`dot ${i === idx ? 'active' : ''} ${seen.has(i) ? 'seen' : ''}`}
-            onClick={() => { setIdx(i); setFlipped(false); setSeen((s) => new Set(s).add(i)) }}
+            onClick={() => { setIdx(i); setFlipped(false); setPairIdx(0); setSeen((s) => new Set(s).add(i)) }}
           >
             {ch.display || ch.devanagari}
           </button>
@@ -91,6 +103,29 @@ export default function Flashcards({ step, onQuiz, onBack, onMatraLab }) {
         <span className="counter">{idx + 1} / {chars.length}</span>
         <button className="btn" onClick={() => go(1)} disabled={idx === chars.length - 1}>次 →</button>
       </div>
+
+      {pair && (
+        <div className="compare-box">
+          <div className="compare-head">
+            <h4>🔍 {PAIR_TITLE[pair.kind]}</h4>
+            {pairs.length > 1 && (
+              <div className="compare-tabs">
+                {pairs.map((p, i) => (
+                  <button
+                    key={p.id}
+                    className={`compare-tab ${i === pairIdx ? 'on' : ''}`}
+                    onClick={() => setPairIdx(i)}
+                  >
+                    {p.charA.devanagari}／{p.charB.devanagari}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <GlyphDiff a={pair.charA} b={pair.charB} />
+          <p className="compare-note">{pair.note}</p>
+        </div>
+      )}
 
       <div className="cta-row">
         {step === 12 && (

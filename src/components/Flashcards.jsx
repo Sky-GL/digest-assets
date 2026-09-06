@@ -9,7 +9,6 @@ const PAIR_TITLE = {
   length: '短音と長音を重ねて見る',
   matra: '長短マートラを重ねて見る',
   lookalike: 'そっくりな字と重ねて見る',
-  derived: '元の字と重ねて見る',
 }
 
 export default function Flashcards({ step, onQuiz, onBack, onMatraLab }) {

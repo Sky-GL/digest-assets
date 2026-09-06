@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { stepMeta, charById } from '../data/steps'
 import SpeakButton from './SpeakButton'
 import GlyphDiff from './GlyphDiff'
+import { playCorrect, playWrong, playClear } from '../lib/sfx'
 
 export default function Quiz({ title, accent = '#fbbf24', questions, onAnswer, onFinish, onBack, onRetry }) {
   const [i, setI] = useState(0)
@@ -18,7 +19,11 @@ export default function Quiz({ title, accent = '#fbbf24', questions, onAnswer, o
 
   // 集計は描画中ではなく完了後に1回だけ実行する
   useEffect(() => {
-    if (done) setResult(onFinish(score, total, maxCombo))
+    if (done) {
+      const r = onFinish(score, total, maxCombo)
+      setResult(r)
+      if (r?.cleared) playClear()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done])
 
@@ -28,6 +33,7 @@ export default function Quiz({ title, accent = '#fbbf24', questions, onAnswer, o
     setPicked(optId)
     onAnswer(q.charId, ok)
     if (ok) {
+      playCorrect()
       setScore((s) => s + 1)
       setCombo((c) => {
         const n = c + 1
@@ -35,6 +41,7 @@ export default function Quiz({ title, accent = '#fbbf24', questions, onAnswer, o
         return n
       })
     } else {
+      playWrong()
       setCombo(0)
       setWrongIds((w) => [...w, q.charId])
     }

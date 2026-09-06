@@ -103,9 +103,11 @@ export const buildStepQuiz = (step, stats = {}, count = 10) => {
     .map((t, i) => makeChoiceQ(t, pool, i % 2 ? 'char2read' : 'read2char'))
 }
 
-/** 復習モード用: 学習済み範囲から誤答優先で出題 */
-export const buildReviewQuiz = (unlockedStep, stats = {}, count = 12) => {
-  const learned = ALL_CHARS.filter((c) => c.step <= unlockedStep)
+/** 復習モード用: 実際に一度でも解答した文字(statsに記録がある文字)から誤答優先で出題 */
+export const buildReviewQuiz = (stats = {}, count = 12) => {
+  const learnedIds = new Set(Object.keys(stats))
+  const learned = ALL_CHARS.filter((c) => learnedIds.has(c.id))
+  if (learned.length === 0) return []
   const targets = weightedPick(learned, stats, Math.min(count, learned.length))
   return shuffle(
     targets.map((t, i) =>

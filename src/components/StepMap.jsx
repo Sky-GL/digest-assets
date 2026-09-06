@@ -16,7 +16,7 @@ export default function StepMap({ progress, onSelect, onReview }) {
     <div className="stepmap">
       <div className="map-header">
         <h1>学習マップ</h1>
-        <p>母音の基本形→子音の代表音(「かさたなはまやらわ」相当)を先に一巡→各行を深掘り、の順に進みます。Stepクイズで80%以上正解すると次が開放。</p>
+        <p>母音の基本形→子音の代表音(「かさたなはまやらわ」相当)を先に一巡→各行を深掘り、の順がおすすめですが、どのStepからでも自由に始められます。Stepクイズで80%以上正解すると★が付きます。</p>
       </div>
 
       <div className="review-banner">
@@ -33,19 +33,17 @@ export default function StepMap({ progress, onSelect, onReview }) {
 
       <div className="steps">
         {STEPS.map((s) => {
-          const unlocked = s.step <= progress.unlockedStep
           const st = progress.steps[s.step]
           const chars = charsOfStep(s.step)
           return (
             <button
               key={s.step}
-              className={`step-card ${unlocked ? '' : 'locked'} ${st?.cleared ? 'cleared' : ''}`}
+              className={`step-card ${st?.cleared ? 'cleared' : ''}`}
               style={{ '--accent': s.color }}
-              disabled={!unlocked}
               onClick={() => onSelect(s.step)}
             >
               <div className="step-top">
-                <span className="step-emoji">{unlocked ? s.emoji : '🔒'}</span>
+                <span className="step-emoji">{s.emoji}</span>
                 <span className="step-no">STEP {s.step}</span>
                 {st?.cleared && <Stars n={st.stars} />}
               </div>

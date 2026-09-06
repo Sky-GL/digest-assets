@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { loadProgress, saveProgress, clearProgress, touchStreak, acknowledgeMigration } from '../lib/storage'
-import { LAST_STEP } from '../data/steps'
 
 export const XP_PER_LEVEL = 120
 export const levelOf = (xp) => Math.floor(xp / XP_PER_LEVEL) + 1
@@ -35,7 +34,8 @@ export function useProgress() {
     })
   }, [])
 
-  // Stepクイズ終了時の集計(正答率でスター判定、80%以上で次をアンロック)
+  // Stepクイズ終了時の集計(正答率でスター判定、80%以上でクリア扱い)。
+  // Stepはロックされていないのでどれでも挑戦できる。クリアは★での達成度表示のみに使う。
   const finishStep = useCallback((step, score, total) => {
     const rate = total ? score / total : 0
     const stars = rate >= 1 ? 3 : rate >= 0.85 ? 2 : rate >= 0.7 ? 1 : 0
@@ -46,7 +46,6 @@ export function useProgress() {
       return {
         ...p,
         xp: p.xp + bonus,
-        unlockedStep: cleared ? Math.min(Math.max(p.unlockedStep, step + 1), LAST_STEP) : p.unlockedStep,
         steps: {
           ...p.steps,
           [step]: {

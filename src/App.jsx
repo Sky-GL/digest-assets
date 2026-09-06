@@ -19,7 +19,7 @@ export default function App() {
     setView({ name: 'quiz', step, questions: buildStepQuiz(step, progress.chars), key: Date.now() })
 
   const startReview = () =>
-    setView({ name: 'review', questions: buildReviewQuiz(progress.unlockedStep, progress.chars), key: Date.now() })
+    setView({ name: 'review', questions: buildReviewQuiz(progress.chars), key: Date.now() })
 
   const handleReset = () => {
     if (window.confirm('学習の進捗をすべて消去します。よろしいですか?')) {
@@ -34,8 +34,8 @@ export default function App() {
       {progress.curriculumMigrated && (
         <div className="migration-banner">
           <span>
-            📚 カリキュラムを「代表音を先に一巡してから深掘りする」構成に整理しました。
-            Stepの並びが変わったため、Stepの進捗(アンロック状況)をリセットしています。
+            📚 カリキュラムを整理し、Stepはどこからでも自由に選べるようになりました。
+            Stepの並びが変わったため、Stepのクリア状況(★)はリセットしています。
             文字ごとの正誤記録とXPはそのまま引き継いでいます。
           </span>
           <button className="btn ghost sm" onClick={dismissMigration}>閉じる</button>
@@ -88,7 +88,7 @@ export default function App() {
             onAnswer={recordAnswer}
             onFinish={(score, total, combo) => {
               noteCombo(combo)
-              // 復習はアンロックに影響しないので判定のみ返す
+              // 復習はStepのクリア記録に影響しないので判定のみ返す
               const rate = total ? score / total : 0
               return { cleared: rate >= 0.8, stars: rate >= 1 ? 3 : rate >= 0.85 ? 2 : rate >= 0.7 ? 1 : 0, rate }
             }}

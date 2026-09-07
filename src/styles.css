@@ -98,6 +98,69 @@ body {
 .review-banner strong { display: block; font-size: 15px; margin-bottom: 3px; }
 .review-banner .sub { color: var(--muted); font-size: 12px; }
 
+/* ===== モード入口(単語 / 神経衰弱) ===== */
+.mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+.mode-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.12); border-radius: var(--radius); padding: 14px;
+  color: var(--text); font-family: inherit; text-align: left;
+  transition: transform .15s ease, border-color .2s, box-shadow .2s;
+}
+.mode-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,.35); }
+.mode-card.words { background: linear-gradient(135deg, rgba(52,211,153,.18), rgba(34,211,238,.1)); border-color: rgba(52,211,153,.35); }
+.mode-card.memory { background: linear-gradient(135deg, rgba(192,132,252,.18), rgba(244,114,182,.1)); border-color: rgba(192,132,252,.35); }
+.mode-emoji { font-size: 22px; }
+.mode-card strong { font-size: 14px; }
+.mode-sub { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+/* ===== 単語モード ===== */
+.word-card {
+  background: var(--panel); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 22px; padding: 22px 16px; margin-bottom: 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.word-syls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.word-syl {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; font-family: inherit;
+  background: rgba(255,255,255,.05); border: 1.5px solid transparent; color: var(--text);
+  border-radius: 14px; padding: 10px 12px; transition: all .2s ease;
+}
+.word-syl.lit { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, transparent); transform: translateY(-3px); }
+.ws-glyph { font-size: 40px; font-family: "Noto Sans Devanagari", serif; line-height: 1.2; }
+.ws-read { font-size: 11px; color: var(--accent); font-style: normal; font-weight: 700; }
+.ws-kana { font-size: 10px; color: var(--muted); }
+.word-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.word-answer { text-align: center; }
+.wa-kana { font-size: 22px; font-weight: 800; color: var(--accent); }
+.wa-meaning { font-size: 15px; margin-top: 4px; }
+.wa-iast { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.word-quiz { margin-top: 4px; }
+
+/* ===== 神経衰弱 ===== */
+.mem-stats { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-bottom: 14px; }
+.mem-stats strong { color: var(--accent); font-size: 14px; }
+.mem-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.mem-card {
+  aspect-ratio: 3 / 4; display: grid; place-items: center; cursor: pointer; font-family: inherit;
+  border-radius: 12px; border: 1.5px solid rgba(255,255,255,.12); color: var(--text);
+  background: linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.03));
+  transition: transform .18s ease, border-color .2s, opacity .3s;
+}
+.mem-card:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--accent); }
+.mem-card.open { background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: var(--accent); }
+.mem-card.matched { opacity: .35; cursor: default; }
+.mem-back { font-size: 22px; font-family: "Noto Sans Devanagari", serif; color: rgba(255,255,255,.18); }
+.mem-glyph { font-size: 32px; font-family: "Noto Sans Devanagari", serif; line-height: 1.1; }
+.mem-read { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.mr-iast { font-size: 15px; font-weight: 800; }
+.mem-read small { font-size: 10px; color: var(--muted); }
+.mem-clear { margin-top: 16px; }
+
+@media (max-width: 380px) {
+  .mem-grid { gap: 6px; }
+  .mem-glyph { font-size: 26px; }
+}
+
 .steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
 .step-card {
   position: relative; text-align: left; cursor: pointer; color: var(--text);

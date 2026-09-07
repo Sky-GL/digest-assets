@@ -8,7 +8,7 @@ const Stars = ({ n }) => (
   </span>
 )
 
-export default function StepMap({ progress, onSelect, onReview }) {
+export default function StepMap({ progress, onSelect, onReview, onWords, onMemory }) {
   const learnedCount = Object.values(progress.chars).length
   const weakCount = Object.values(progress.chars).filter((c) => c.wrong > 0).length
 
@@ -28,6 +28,19 @@ export default function StepMap({ progress, onSelect, onReview }) {
         </div>
         <button className="btn primary" disabled={learnedCount === 0} onClick={onReview}>
           {learnedCount === 0 ? 'Step1から始めよう' : '苦手を復習する'}
+        </button>
+      </div>
+
+      <div className="mode-row">
+        <button className="mode-card words" onClick={onWords}>
+          <span className="mode-emoji">📖</span>
+          <strong>単語モード</strong>
+          <span className="mode-sub">覚えた文字で実際の単語を読む。59語収録</span>
+        </button>
+        <button className="mode-card memory" onClick={onMemory}>
+          <span className="mode-emoji">🃏</span>
+          <strong>神経衰弱</strong>
+          <span className="mode-sub">文字と読みのペアを揃える。遊びながら定着</span>
         </button>
       </div>
 

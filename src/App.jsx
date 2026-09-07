@@ -1,17 +1,22 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import HUD from './components/HUD'
 import StepMap from './components/StepMap'
 import Flashcards from './components/Flashcards'
 import Quiz from './components/Quiz'
 import MatraLab from './components/MatraLab'
+import WordMode from './components/WordMode'
+import MemoryGame from './components/MemoryGame'
 import { useProgress } from './hooks/useProgress'
 import { buildStepQuiz, buildReviewQuiz } from './lib/quiz'
 import { stepMeta, MATRA_STEP } from './data/steps'
 
 export default function App() {
   const { progress, recordAnswer, finishStep, noteCombo, reset, dismissMigration } = useProgress()
-  // view: { name: 'map' | 'cards' | 'quiz' | 'lab' | 'review', step?, questions? }
+  // view: { name: 'map' | 'cards' | 'quiz' | 'lab' | 'review' | 'words' | 'memory', step?, questions? }
   const [view, setView] = useState({ name: 'map' })
+
+  // 一度でも解答した文字のID集合(単語モード/神経衰弱の出題範囲に使う)
+  const learnedIds = useMemo(() => new Set(Object.keys(progress.chars)), [progress.chars])
 
   const goMap = () => setView({ name: 'map' })
 
@@ -47,7 +52,17 @@ export default function App() {
             progress={progress}
             onSelect={(step) => setView({ name: 'cards', step })}
             onReview={startReview}
+            onWords={() => setView({ name: 'words', key: Date.now() })}
+            onMemory={() => setView({ name: 'memory', key: Date.now() })}
           />
+        )}
+
+        {view.name === 'words' && (
+          <WordMode key={view.key} learnedIds={learnedIds} onBack={goMap} onAnswer={recordAnswer} />
+        )}
+
+        {view.name === 'memory' && (
+          <MemoryGame key={view.key} learnedIds={learnedIds} onBack={goMap} onAnswer={recordAnswer} />
         )}
 
         {view.name === 'cards' && (

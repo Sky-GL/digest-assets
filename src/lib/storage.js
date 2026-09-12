@@ -10,6 +10,7 @@ export const emptyProgress = () => ({
   chars: {},   // { [id]: { correct, wrong, lastSeen, streak } }
   streak: { count: 0, lastDate: null },
   bestCombo: 0,
+  bestChallenge: 0, // 4択チャレンジの自己ベストスコア
   curriculumMigrated: false, // カリキュラム再編でStepのクリア状況をリセットしたことを一度だけ通知するためのフラグ
 })
 

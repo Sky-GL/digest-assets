@@ -64,6 +64,10 @@ export function useProgress() {
     setProgress((p) => (combo > p.bestCombo ? { ...p, bestCombo: combo } : p))
   }, [])
 
+  const noteChallenge = useCallback((score) => {
+    setProgress((p) => (score > (p.bestChallenge || 0) ? { ...p, bestChallenge: score, xp: p.xp + 20 } : p))
+  }, [])
+
   const reset = useCallback(() => {
     clearProgress()
     setProgress(() => {
@@ -76,5 +80,5 @@ export function useProgress() {
     setProgress((p) => acknowledgeMigration(p))
   }, [])
 
-  return { progress, recordAnswer, finishStep, noteCombo, reset, dismissMigration }
+  return { progress, recordAnswer, finishStep, noteCombo, noteChallenge, reset, dismissMigration }
 }

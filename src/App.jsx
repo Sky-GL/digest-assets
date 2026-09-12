@@ -6,13 +6,14 @@ import Quiz from './components/Quiz'
 import MatraLab from './components/MatraLab'
 import WordMode from './components/WordMode'
 import MemoryGame from './components/MemoryGame'
+import Challenge from './components/Challenge'
 import { useProgress } from './hooks/useProgress'
 import { buildStepQuiz, buildReviewQuiz } from './lib/quiz'
 import { stepMeta, MATRA_STEP } from './data/steps'
 
 export default function App() {
-  const { progress, recordAnswer, finishStep, noteCombo, reset, dismissMigration } = useProgress()
-  // view: { name: 'map' | 'cards' | 'quiz' | 'lab' | 'review' | 'words' | 'memory', step?, questions? }
+  const { progress, recordAnswer, finishStep, noteCombo, noteChallenge, reset, dismissMigration } = useProgress()
+  // view: { name: 'map' | 'cards' | 'quiz' | 'lab' | 'review' | 'words' | 'memory' | 'challenge', step?, questions? }
   const [view, setView] = useState({ name: 'map' })
 
   // 一度でも解答した文字のID集合(単語モード/神経衰弱の出題範囲に使う)
@@ -54,11 +55,23 @@ export default function App() {
             onReview={startReview}
             onWords={() => setView({ name: 'words', key: Date.now() })}
             onMemory={() => setView({ name: 'memory', key: Date.now() })}
+            onChallenge={() => setView({ name: 'challenge', key: Date.now() })}
           />
         )}
 
         {view.name === 'words' && (
           <WordMode key={view.key} learnedIds={learnedIds} onBack={goMap} onAnswer={recordAnswer} />
+        )}
+
+        {view.name === 'challenge' && (
+          <Challenge
+            key={view.key}
+            learnedIds={learnedIds}
+            onBack={goMap}
+            onAnswer={recordAnswer}
+            best={progress.bestChallenge || 0}
+            onRecord={noteChallenge}
+          />
         )}
 
         {view.name === 'memory' && (

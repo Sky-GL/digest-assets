@@ -116,4 +116,19 @@ export const buildReviewQuiz = (stats = {}, count = 12) => {
   )
 }
 
+/**
+ * 4択チャレンジ用の1問を作る。
+ * Stepに縛られず、渡された文字プールから出題する。
+ * weightedPick(n=1)だと毎回ほぼ同じ字が選ばれてしまうので、
+ * 優先度の高い上位数字から1つをランダムに引く(直前と同じ字は避ける)。
+ */
+export const buildChallengeQ = (pool, stats = {}, direction, excludeId = null) => {
+  if (pool.length < 4) return null
+  const cands = weightedPick(pool, stats, Math.min(6, pool.length))
+  const usable = cands.filter((c) => c.id !== excludeId)
+  const list = usable.length ? usable : cands
+  const target = list[Math.floor(Math.random() * list.length)]
+  return makeChoiceQ(target, pool, direction)
+}
+
 export { shuffle }

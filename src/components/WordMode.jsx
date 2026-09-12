@@ -41,6 +41,7 @@ export default function WordMode({ learnedIds, onBack, onAnswer }) {
   const word = words[idx]
   const syls = useMemo(() => (word ? toSyllables(word) : []), [word])
   const total = words.length
+  const answering = !!quiz && !quiz.picked // 出題中で、まだ答えていない状態
 
   // 単語が変わったら状態をリセット
   useEffect(() => {
@@ -89,6 +90,7 @@ export default function WordMode({ learnedIds, onBack, onAnswer }) {
   const startQuiz = () => {
     // 意味あて4択。ダミーは他の単語の意味から
     const others = shuffle(words.filter((w) => w.id !== word.id)).slice(0, 3)
+    setRevealed(false) // 答えが出たままだとカンニングになるので閉じる
     setQuiz({ options: shuffle([word, ...others]), picked: null })
   }
 
@@ -154,14 +156,22 @@ export default function WordMode({ learnedIds, onBack, onAnswer }) {
           <SpeakButton text={word.devanagari} label="通しで聞く" />
         </div>
 
-        {revealed ? (
-          <div className="word-answer">
-            <div className="wa-kana">{word.kana}</div>
-            <div className="wa-meaning">{word.meaning}</div>
-            <div className="wa-iast">{word.iast}</div>
-          </div>
+        {/* 解答前は答えを開けないようにする(意味あてのカンニングになるため) */}
+        {answering ? (
+          <p className="hint-text sm">答えを選ぶと読みと意味が出ます</p>
         ) : (
-          <button className="btn" onClick={() => setRevealed(true)}>読みと意味を見る</button>
+          <>
+            {revealed && (
+              <div className="word-answer">
+                <div className="wa-kana">{word.kana}</div>
+                <div className="wa-meaning">{word.meaning}</div>
+                <div className="wa-iast">{word.iast}</div>
+              </div>
+            )}
+            <button className="btn" onClick={() => setRevealed((v) => !v)}>
+              {revealed ? '読みと意味を隠す' : '読みと意味を見る'}
+            </button>
+          </>
         )}
       </div>
 

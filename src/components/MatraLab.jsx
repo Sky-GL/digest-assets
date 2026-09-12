@@ -21,7 +21,7 @@ export default function MatraLab({ onBack, onQuiz }) {
   }
 
   return (
-    <div className="screen matralab" style={{ '--accent': '#fbbf24' }}>
+    <div className="screen matralab" style={{ '--accent': 'var(--accent-base)' }}>
       <div className="screen-head">
         <button className="btn ghost" onClick={onBack}>← 戻る</button>
         <div className="head-title">

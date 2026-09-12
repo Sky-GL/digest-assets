@@ -11,18 +11,18 @@ import data from './devanagari-data.json'
  * どのStepも自由に選べる(ロックなし)。★はクリア済みの達成度表示。
  */
 export const STEPS = [
-  { step: 1, title: '母音(基本)',       subtitle: '「あいうえお」に相当', emoji: '🌱', color: '#4ade80', tip: 'まずはこの5つだけ。अ は「口を開かないア」。' },
-  { step: 2, title: '母音(長音・複合)', subtitle: '基本形に線が増えるだけ', emoji: '🌿', color: '#22d3ee', tip: 'カード下の「重ね比較」で、基本形からどこが増えたかが光って見える。' },
-  { step: 3, title: '特殊母音記号',      subtitle: '点と2点',              emoji: '✨', color: '#a78bfa', tip: '点(ं)は鼻に抜く、2点(ः)は息を添える。' },
-  { step: 4, title: '子音・代表音① 破裂音+鼻音', subtitle: '★「か・た・な・ぱ・ま」行の代表音', emoji: '👑', color: '#fbbf24', tip: '各行の基本の子音を1つずつ。まずは破裂音と鼻音の7字だけ。' },
-  { step: 5, title: '子音・代表音② 半母音+摩擦音', subtitle: '★「や・ら・わ・さ・は」行の代表音', emoji: '🌤️', color: '#38bdf8', tip: '残り7字。半母音と摩擦音は変化が少なく、比較的やさしい。' },
-  { step: 6, title: 'क行の深掘り',      subtitle: '喉の奥 k/g/kh/gh',      emoji: '🔥', color: '#fb923c', tip: 'क に息や濁りを足していく。カード下でक との重ね比較を見て関連づける。' },
-  { step: 7, title: 'च行の深掘り',      subtitle: 'ch/j',                 emoji: '⚡', color: '#facc15', tip: 'क行と同じパターン。च に息や濁りを足すだけ。' },
-  { step: 8, title: 'ट行の深掘り',      subtitle: 'そり舌・最難関',        emoji: '🐍', color: '#f43f5e', tip: 'ट に息や濁りを足す。歯音の ट行 と त行 は「重ね比較」で形からも区別する。' },
-  { step: 9, title: 'त行の深掘り',      subtitle: '日本語に近い歯音',      emoji: '🦷', color: '#60a5fa', tip: 'त に息や濁りを足す。न はStep4で既に覚えている。' },
-  { step: 10, title: 'प行+摩擦音の深掘り', subtitle: 'p/b/bh + そり舌のsh', emoji: '👄', color: '#f472b6', tip: 'प に息や濁りを足す。ここで全子音が出そろう。' },
-  { step: 11, title: 'マートラ(母音記号)', subtitle: '★最重要 — 単語が読める', emoji: '📖', color: '#fbbf24', tip: 'ि は左に書いて後ろで読む。ここを越えると単語が読めるようになる。' },
-  { step: 12, title: '頻出結合文字',      subtitle: 'ラスボス',             emoji: '🏆', color: '#e879f9', tip: '2つの子音が合体した形。よく見ると元の字が隠れている。' },
+  { step: 1, title: '母音(基本)',       subtitle: '「あいうえお」に相当', emoji: '🌱', color: 'var(--step-1)', tip: 'まずはこの5つだけ。अ は「口を開かないア」。' },
+  { step: 2, title: '母音(長音・複合)', subtitle: '基本形に線が増えるだけ', emoji: '🌿', color: 'var(--step-2)', tip: 'カード下の「重ね比較」で、基本形からどこが増えたかが光って見える。' },
+  { step: 3, title: '特殊母音記号',      subtitle: '点と2点',              emoji: '✨', color: 'var(--step-3)', tip: '点(ं)は鼻に抜く、2点(ः)は息を添える。' },
+  { step: 4, title: '子音・代表音① 破裂音+鼻音', subtitle: '★「か・た・な・ぱ・ま」行の代表音', emoji: '👑', color: 'var(--step-4)', tip: '各行の基本の子音を1つずつ。まずは破裂音と鼻音の7字だけ。' },
+  { step: 5, title: '子音・代表音② 半母音+摩擦音', subtitle: '★「や・ら・わ・さ・は」行の代表音', emoji: '🌤️', color: 'var(--step-5)', tip: '残り7字。半母音と摩擦音は変化が少なく、比較的やさしい。' },
+  { step: 6, title: 'क行の深掘り',      subtitle: '喉の奥 k/g/kh/gh',      emoji: '🔥', color: 'var(--step-6)', tip: 'क に息や濁りを足していく。カード下でक との重ね比較を見て関連づける。' },
+  { step: 7, title: 'च行の深掘り',      subtitle: 'ch/j',                 emoji: '⚡', color: 'var(--step-7)', tip: 'क行と同じパターン。च に息や濁りを足すだけ。' },
+  { step: 8, title: 'ट行の深掘り',      subtitle: 'そり舌・最難関',        emoji: '🐍', color: 'var(--step-8)', tip: 'ट に息や濁りを足す。歯音の ट行 と त行 は「重ね比較」で形からも区別する。' },
+  { step: 9, title: 'त行の深掘り',      subtitle: '日本語に近い歯音',      emoji: '🦷', color: 'var(--step-9)', tip: 'त に息や濁りを足す。न はStep4で既に覚えている。' },
+  { step: 10, title: 'प行+摩擦音の深掘り', subtitle: 'p/b/bh + そり舌のsh', emoji: '👄', color: 'var(--step-10)', tip: 'प に息や濁りを足す。ここで全子音が出そろう。' },
+  { step: 11, title: 'マートラ(母音記号)', subtitle: '★最重要 — 単語が読める', emoji: '📖', color: 'var(--step-11)', tip: 'ि は左に書いて後ろで読む。ここを越えると単語が読めるようになる。' },
+  { step: 12, title: '頻出結合文字',      subtitle: 'ラスボス',             emoji: '🏆', color: 'var(--step-12)', tip: '2つの子音が合体した形。よく見ると元の字が隠れている。' },
 ]
 
 export const ALL_CHARS = data.characters

@@ -111,7 +111,7 @@ export default function App() {
           <Quiz
             key={view.key}
             title="復習モード(苦手優先)"
-            accent="#f472b6"
+            accent="var(--c-review)"
             questions={view.questions}
             onAnswer={recordAnswer}
             onFinish={(score, total, combo) => {

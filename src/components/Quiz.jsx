@@ -4,7 +4,7 @@ import SpeakButton from './SpeakButton'
 import GlyphDiff from './GlyphDiff'
 import { playCorrect, playWrong, playClear } from '../lib/sfx'
 
-export default function Quiz({ title, accent = '#fbbf24', questions, onAnswer, onFinish, onBack, onRetry }) {
+export default function Quiz({ title, accent = 'var(--accent-base)', questions, onAnswer, onFinish, onBack, onRetry }) {
   const [i, setI] = useState(0)
   const [picked, setPicked] = useState(null)
   const [score, setScore] = useState(0)
@@ -133,4 +133,4 @@ export default function Quiz({ title, accent = '#fbbf24', questions, onAnswer, o
   )
 }
 
-export const quizAccent = (step) => stepMeta(step)?.color || '#fbbf24'
+export const quizAccent = (step) => stepMeta(step)?.color || 'var(--accent-base)'

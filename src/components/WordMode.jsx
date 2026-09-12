@@ -64,7 +64,7 @@ export default function WordMode({ learnedIds, onBack, onAnswer }) {
   if (done) {
     const rate = Math.round((score / total) * 100)
     return (
-      <div className="screen result" style={{ '--accent': '#34d399' }}>
+      <div className="screen result" style={{ '--accent': 'var(--c-words)' }}>
         <div className="result-badge ok">📖 単語モード終了</div>
         <h2>{score} / {total} 正解({rate}%)</h2>
         <p className="hint-text">読めた単語が増えるほど、文字も自然に定着します。</p>
@@ -118,7 +118,7 @@ export default function WordMode({ learnedIds, onBack, onAnswer }) {
   }
 
   return (
-    <div className="screen wordmode" style={{ '--accent': '#34d399' }}>
+    <div className="screen wordmode" style={{ '--accent': 'var(--c-words)' }}>
       <div className="screen-head">
         <button className="btn ghost" onClick={onBack}>← マップ</button>
         <div className="head-title">

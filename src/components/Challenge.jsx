@@ -96,7 +96,7 @@ export default function Challenge({ learnedIds, onBack, onAnswer, best, onRecord
   if (over) {
     const isBest = score > bestBefore
     return (
-      <div className="screen result" style={{ '--accent': '#fbbf24' }}>
+      <div className="screen result" style={{ '--accent': 'var(--accent-base)' }}>
         <div className={`result-badge ${isBest ? 'ok' : ''}`}>{isBest ? '🏆 自己ベスト更新!' : '⚡ ゲームオーバー'}</div>
         <h2>{score} 点</h2>
         <p className="hint-text">最大コンボ {bestCombo} / ベスト {Math.max(bestBefore, score)} 点</p>
@@ -111,7 +111,7 @@ export default function Challenge({ learnedIds, onBack, onAnswer, best, onRecord
   const wrong = picked && picked !== q.answerId
 
   return (
-    <div className="screen quiz challenge" style={{ '--accent': '#fbbf24' }}>
+    <div className="screen quiz challenge" style={{ '--accent': 'var(--accent-base)' }}>
       <div className="screen-head">
         <button className="btn ghost" onClick={onBack}>← マップ</button>
         <div className="head-title">

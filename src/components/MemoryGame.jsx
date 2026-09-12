@@ -135,7 +135,7 @@ export default function MemoryGame({ learnedIds, onBack, onAnswer }) {
   }
 
   return (
-    <div className="screen memory" style={{ '--accent': '#c084fc' }}>
+    <div className="screen memory" style={{ '--accent': 'var(--c-memory)' }}>
       <div className="screen-head">
         <button className="btn ghost" onClick={onBack}>← マップ</button>
         <div className="head-title">

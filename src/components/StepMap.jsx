@@ -8,7 +8,7 @@ const Stars = ({ n }) => (
   </span>
 )
 
-export default function StepMap({ progress, onSelect, onReview, onWords, onMemory }) {
+export default function StepMap({ progress, onSelect, onReview, onWords, onMemory, onChallenge }) {
   const learnedCount = Object.values(progress.chars).length
   const weakCount = Object.values(progress.chars).filter((c) => c.wrong > 0).length
 
@@ -37,10 +37,17 @@ export default function StepMap({ progress, onSelect, onReview, onWords, onMemor
           <strong>単語モード</strong>
           <span className="mode-sub">覚えた文字で実際の単語を読む。59語収録</span>
         </button>
+        <button className="mode-card challenge" onClick={onChallenge}>
+          <span className="mode-emoji">⚡</span>
+          <strong>4択チャレンジ</strong>
+          <span className="mode-sub">
+            ライフ3で何問続く? {progress.bestChallenge ? `ベスト ${progress.bestChallenge} 点` : 'まずは1回'}
+          </span>
+        </button>
         <button className="mode-card memory" onClick={onMemory}>
           <span className="mode-emoji">🃏</span>
           <strong>神経衰弱</strong>
-          <span className="mode-sub">文字と読みのペアを揃える。遊びながら定着</span>
+          <span className="mode-sub">ペア探し。3〜6ペアで難易度を選べます</span>
         </button>
       </div>
 

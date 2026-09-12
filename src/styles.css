@@ -99,7 +99,7 @@ body {
 .review-banner .sub { color: var(--muted); font-size: 12px; }
 
 /* ===== モード入口(単語 / 神経衰弱) ===== */
-.mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+.mode-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
 .mode-card {
   display: flex; flex-direction: column; align-items: flex-start; gap: 4px; cursor: pointer;
   border: 1px solid rgba(255,255,255,.12); border-radius: var(--radius); padding: 14px;
@@ -109,6 +109,7 @@ body {
 .mode-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,.35); }
 .mode-card.words { background: linear-gradient(135deg, rgba(52,211,153,.18), rgba(34,211,238,.1)); border-color: rgba(52,211,153,.35); }
 .mode-card.memory { background: linear-gradient(135deg, rgba(192,132,252,.18), rgba(244,114,182,.1)); border-color: rgba(192,132,252,.35); }
+.mode-card.challenge { background: linear-gradient(135deg, rgba(251,191,36,.2), rgba(244,114,182,.1)); border-color: rgba(251,191,36,.4); }
 .mode-emoji { font-size: 22px; }
 .mode-card strong { font-size: 14px; }
 .mode-sub { font-size: 11px; color: var(--muted); line-height: 1.5; }
@@ -136,7 +137,23 @@ body {
 .wa-iast { font-size: 11px; color: var(--muted); margin-top: 3px; }
 .word-quiz { margin-top: 4px; }
 
+/* ===== 4択チャレンジ ===== */
+.ch-stats { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+.ch-stats strong { color: var(--accent); font-size: 15px; }
+.ch-lives { font-size: 15px; letter-spacing: 2px; }
+
 /* ===== 神経衰弱 ===== */
+.level-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+.level-chip {
+  display: flex; flex-direction: column; align-items: center; gap: 1px; cursor: pointer; font-family: inherit;
+  background: rgba(255,255,255,.05); border: 1.5px solid transparent; color: var(--muted);
+  border-radius: 12px; padding: 7px 14px; font-size: 12px; font-weight: 700; transition: all .2s ease;
+}
+.level-chip.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--text); }
+.level-chip small { font-size: 9px; font-weight: 500; opacity: .8; }
+.mem-peek-note { text-align: center; font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+.mem-grid.peeking .mem-card { animation: peek-pulse 1.2s ease-in-out infinite; }
+@keyframes peek-pulse { 50% { border-color: var(--accent); } }
 .mem-stats { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-bottom: 14px; }
 .mem-stats strong { color: var(--accent); font-size: 14px; }
 .mem-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }

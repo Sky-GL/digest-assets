@@ -11,3 +11,16 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 )
+
+// Service Workerを登録する。
+// これが無いとChromeがPWAと認識せず、ホーム画面に追加しても
+// manifestのアイコンではなく自動生成のタイルになってしまう。
+// 開発中(vite dev)は邪魔なので本番ビルドのときだけ登録する。
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    // スコープをサイト全体にしたいので絶対パスで登録する
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* 登録できなくてもアプリ自体は動く */
+    })
+  })
+}

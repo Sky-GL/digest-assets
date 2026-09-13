@@ -136,6 +136,12 @@ export default function WordMode({ learnedIds, onBack, onAnswer }) {
       </div>
 
       <div className="word-card">
+        {/* 実際の表記(くっついた形)を主役にする。分解はその下の補助。 */}
+        <button className="word-whole" onClick={() => speakText(word.devanagari)} title="タップで発音">
+          {word.devanagari}
+        </button>
+        <p className="word-split-label">1文字ずつに分けると</p>
+
         <div className="word-syls">
           {syls.map((s, i) => (
             <button

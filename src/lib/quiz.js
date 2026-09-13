@@ -13,11 +13,38 @@ const shuffle = (arr) => {
 // マートラは単独母音と読みが同じなので束縛形(-ā)として区別する
 const label = (c) => (c.group === 'matra' ? `-${c.iast} ${c.ipa}` : `${c.iast} ${c.ipa}`)
 
-// ダミー選択肢は同じグループ優先(似ているほど良問になる)
+/**
+ * 選択肢の「種類」。マートラは単独では立てない束縛形なので、
+ * 独立字(母音・子音・結合文字)と混ぜてはいけない。
+ * 混ざると ◌ी のような点線付きの形が子音の選択肢に並び、
+ * 見た目で即座に除外できてしまう(= 問題として成立しない)。
+ */
+const unitOf = (c) => (c.group === 'matra' ? 'matra' : 'letter')
+
+/**
+ * ダミー選択肢を選ぶ。優先順位は
+ *   1. 出題プール内の同じ種類・同じグループ(いちばん紛らわしい)
+ *   2. 出題プール内の同じ種類
+ *   3. 全文字から同じ種類
+ * 学習済みが少ないうちは 1〜2 だけでは4択が埋まらないが、そこで種類をまたいで
+ * 補うと独立字の問題にマートラが並んでしまう。ダミーは未学習の字でも構わないので、
+ * プールを広げるより先に「同じ種類のまま全文字へ広げる」。
+ */
 const distractors = (target, pool, n = 3) => {
-  const same = pool.filter((c) => c.id !== target.id && c.group === target.group)
-  const other = pool.filter((c) => c.id !== target.id && c.group !== target.group)
-  return shuffle(same).slice(0, n).concat(shuffle(other)).slice(0, n)
+  const unit = unitOf(target)
+  const take = (list) => list.filter((c) => c.id !== target.id && unitOf(c) === unit)
+  const inPool = take(pool)
+  const picked = shuffle(inPool.filter((c) => c.group === target.group))
+    .concat(shuffle(inPool.filter((c) => c.group !== target.group)))
+    .slice(0, n)
+  if (picked.length >= n) return picked
+
+  const usedIds = new Set([target.id, ...picked.map((c) => c.id)])
+  const widened = take(ALL_CHARS).filter((c) => !usedIds.has(c.id))
+  return picked
+    .concat(shuffle(widened.filter((c) => c.group === target.group)))
+    .concat(shuffle(widened.filter((c) => c.group !== target.group)))
+    .slice(0, n)
 }
 
 const makeChoiceQ = (target, pool, direction) => {

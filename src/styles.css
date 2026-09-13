@@ -563,3 +563,17 @@ body {
 .tm-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .tm-text strong { font-size: 13px; }
 .tm-text small { font-size: 10px; color: var(--muted); line-height: 1.4; }
+
+/* ===== 単語モード: くっついた表記(実際に目にする形) ===== */
+.word-whole {
+  font-family: "Noto Sans Devanagari", "Nirmala UI", "Mangal", "Kohinoor Devanagari", serif;
+  font-size: 64px; line-height: 1.25; letter-spacing: 1px;
+  background: none; border: 0; cursor: pointer; padding: 0 6px;
+  color: var(--text); text-shadow: 0 0 34px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.word-whole:hover { color: var(--accent); }
+.word-split-label { font-size: 11px; color: var(--muted); margin: -6px 0 0; }
+
+@media (max-width: 560px) {
+  .word-whole { font-size: 52px; }
+}

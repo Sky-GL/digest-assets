@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PopEngine } from '../lib/popEngine'
 import { POP_STAGES, popStage, shade, withAlpha } from '../data/popStages'
-import { loadPop, savePop, addExp, expToNext, spawnTier, recordBest, markCleared } from '../lib/popStore'
+import { loadPop, savePop, addExp, expToNext, recordBest, markCleared } from '../lib/popStore'
 import { hasHindiVoice, speakText } from '../lib/speech'
 import { unlockAudio } from '../lib/sfx'
 
@@ -36,7 +36,7 @@ function HowTo({ onClose }) {
         <ol className="pop-howto">
           <li>画面をタップ／ドラッグして位置を決め、指を離すと文字メダルが落ちます。</li>
           <li>同じ文字どうしがぶつかると合体して、次の文字に進化します。</li>
-          <li>落とす・合体するたびに、その文字をヒンディー語で読み上げます。音と形をセットで覚えましょう。</li>
+          <li>ステージの文字がまんべんなく降ってきます。落とす・合体するたびにヒンディー語で読み上げるので、音と形をセットで覚えましょう。</li>
           <li>点線より上に積み上がるとゲームオーバー。最後の文字まで進化させるとステージクリアです。</li>
         </ol>
         <button className="btn primary" onClick={onClose}>わかった!</button>
@@ -80,20 +80,15 @@ export default function PopGame({ onBack }) {
   // プレイ画面に入ったらエンジンを起動、離れたら破棄
   useEffect(() => {
     if (phase !== 'play' || !canvasRef.current) return undefined
-    const engine = new PopEngine(stage, saveRef.current.level, {
+    const engine = new PopEngine(stage, {
       onScore: setScore,
       onNext: setNextLevel,
       onFirstInteract: () => setHint(false),
       onUnlock: (lv) => setUnlocked((u) => Math.max(u, lv)),
       onMerge: (lv) => {
-        const prev = saveRef.current
-        const { next, gained } = addExp(prev, lv + 1)
+        const { next, gained } = addExp(saveRef.current, lv + 1)
         commit(next)
-        if (gained > 0) {
-          engine.setPlayerLevel(next.level)
-          const tierUp = spawnTier(next.level) > spawnTier(prev.level)
-          showToast({ kind: 'level', level: next.level, tierUp }, 2200)
-        }
+        if (gained > 0) showToast({ kind: 'level', level: next.level }, 2200)
       },
       onStageClear: () => {
         if (!saveRef.current.cleared[stageId]) {
@@ -228,7 +223,6 @@ export default function PopGame({ onBack }) {
         {toast?.kind === 'level' && (
           <div className="pop-toast">
             ✨ Lv {toast.level} ✨
-            {toast.tierUp && <small>大きい文字も降ってくるようになった!</small>}
           </div>
         )}
         {toast?.kind === 'clear' && (

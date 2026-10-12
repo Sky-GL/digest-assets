@@ -7,10 +7,12 @@ import { charById, syllable } from './steps'
 
 const COLORS = ['#a5b4c4', '#38d0f0', '#4f7cff', '#a070ff', '#3ddc84', '#f2d03b', '#ff9a2e', '#ff4d4d', '#e0409a', '#ffd966']
 
-const MIN_R = 26
-const MAX_R = 116
+// 全文字がランダムに降ってくるので、大きい文字が降っても詰まらないよう大きさの差は小さめにする。
+// レベルの見分けは大きさより色(とリング)で行う。
+const MIN_R = 30
+const MAX_R = 54
 
-// レベル0〜n-1 の半径を等比で補間(最小26→最大116)
+// レベル0〜n-1 の半径を等比で補間(最小30→最大54)
 const radiusOf = (level, count) =>
   count <= 1 ? MIN_R : Math.round(MIN_R * Math.pow(MAX_R / MIN_R, level / (count - 1)))
 

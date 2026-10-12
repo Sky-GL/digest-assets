@@ -1,6 +1,5 @@
 import Matter from 'matter-js'
 import { shade, withAlpha } from '../data/popStages'
-import { spawnPool } from './popStore'
 import { playPopDrop, playPopMerge, playPopFinish, unlockAudio } from './sfx'
 import { primeSpeech, speakText } from './speech'
 
@@ -113,7 +112,7 @@ const roundRect = (ctx, x, y, w, h, r) => {
 export const drawMedal = (ctx, x, y, item, { scale = 1, alpha = 1, squash = 0, aura = false } = {}) => {
   const s = item.radius * scale
   const accent = item.base
-  const showLabel = item.radius >= 38 // 小さいメダルではローマ字が潰れるので文字を優先する
+  const showLabel = item.radius >= 30 // 小さいメダルではローマ字が潰れるので文字を優先する
   ctx.save()
   ctx.globalAlpha = alpha
   ctx.translate(x, y)
@@ -207,14 +206,12 @@ const popCurve = (v) => (v <= 0 ? 0 : Math.sin(v * Math.PI * 0.9))
 // ---------- ゲーム本体 ----------
 export class PopEngine {
   /**
-   * @param stage        POP_STAGES の1要素
-   * @param playerLevel  プレイヤーLv(出現する文字の大きさに影響)
-   * @param cb           { onScore, onNext, onFirstInteract, onUnlock, onMerge, onStageClear, onFinish }
+   * @param stage  POP_STAGES の1要素
+   * @param cb     { onScore, onNext, onFirstInteract, onUnlock, onMerge, onStageClear, onFinish }
    */
-  constructor(stage, playerLevel, cb) {
+  constructor(stage, cb) {
     this.cb = cb
     this.chars = stage.chars
-    this.pool = spawnPool(playerLevel)
     this.engine = Engine.create()
     this.engine.gravity.y = 1.1
     this.particles = []
@@ -229,7 +226,8 @@ export class PopEngine {
     this.lastFrame = 0
     this.confettiT = 0
     this.rafId = 0
-    this.recent = [-1, -1] // 直近2回に出した文字(同じ文字の3連続を防ぐ)
+    this.bag = [] // 出す順にシャッフルした文字の袋。空になったら詰め直す
+    this.lastSpawn = -1
     this.nextLevel = this.rollSpawn()
   }
 
@@ -237,18 +235,23 @@ export class PopEngine {
     return this.chars.length - 1
   }
 
-  setPlayerLevel(level) {
-    this.pool = spawnPool(level)
-  }
-
+  /**
+   * 次に降らせる文字を決める。学習のため、ステージの全文字を「シャッフルした袋」から1周ずつ出す。
+   * 1周の間に各文字がちょうど1回ずつ出るので偏らない(最終形は合体でしか出ない)。
+   */
   rollSpawn() {
-    let lv = 0
-    for (let i = 0; i < 8; i++) {
-      lv = Math.min(this.pool[Math.floor(Math.random() * this.pool.length)], this.maxLevel)
-      if (!(this.recent[0] === lv && this.recent[1] === lv)) break
+    if (this.bag.length === 0) {
+      const bag = Array.from({ length: this.maxLevel }, (_, i) => i)
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[bag[i], bag[j]] = [bag[j], bag[i]]
+      }
+      // 袋の継ぎ目で同じ文字が続かないようにする(末尾から取り出す)
+      if (bag.length > 1 && bag[bag.length - 1] === this.lastSpawn) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]]
+      this.bag = bag
     }
-    this.recent = [this.recent[1], lv]
-    return lv
+    this.lastSpawn = this.bag.pop()
+    return this.lastSpawn
   }
 
   mount(canvas) {
@@ -304,7 +307,8 @@ export class PopEngine {
     this.accumulator = 0
     this.finished = false
     this.confettiT = 0
-    this.recent = [-1, -1]
+    this.bag = []
+    this.lastSpawn = -1
     this.nextLevel = this.rollSpawn()
     this.cb.onScore(0)
     this.cb.onNext(this.nextLevel)

@@ -8,7 +8,7 @@ const Stars = ({ n }) => (
   </span>
 )
 
-export default function StepMap({ progress, onSelect, onReview, onWords, onMemory, onChallenge }) {
+export default function StepMap({ progress, onSelect, onReview, onWords, onMemory, onChallenge, onPop }) {
   const learnedCount = Object.values(progress.chars).length
   const weakCount = Object.values(progress.chars).filter((c) => c.wrong > 0).length
 
@@ -48,6 +48,11 @@ export default function StepMap({ progress, onSelect, onReview, onWords, onMemor
           <span className="mode-emoji">🃏</span>
           <strong>神経衰弱</strong>
           <span className="mode-sub">ペア探し。3〜6ペアで難易度を選べます</span>
+        </button>
+        <button className="mode-card pop" onClick={onPop}>
+          <span className="mode-emoji">🫧</span>
+          <strong>ポップ</strong>
+          <span className="mode-sub">同じ文字を合体させて進化。落とすたびに読み上げ</span>
         </button>
       </div>
 

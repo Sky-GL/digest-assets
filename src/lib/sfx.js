@@ -60,3 +60,60 @@ export const playClear = () => {
     /* noop */
   }
 }
+
+/** ユーザー操作内で呼んで AudioContext を解錠する */
+export const unlockAudio = () => {
+  try {
+    getCtx()
+  } catch {
+    /* noop */
+  }
+}
+
+/** ポップ: 文字を落とした音 */
+export const playPopDrop = () => {
+  try {
+    tone(760, 0, 0.09, { peak: 0.07 })
+    tone(500, 0.04, 0.08, { peak: 0.05 })
+  } catch {
+    /* noop */
+  }
+}
+
+/** ポップ: 合体音。進化するほど高く、最終形は音を足して華やかに */
+export const playPopMerge = (level, big = false) => {
+  try {
+    const f = 520 * Math.pow(1.06, level)
+    tone(f, 0, 0.16, { peak: 0.07 })
+    tone(f * 1.5, 0.05, 0.18, { peak: 0.055 })
+    tone(f * 2, 0.1, 0.22, { peak: 0.04 })
+    if (big) {
+      tone(f * 2.5, 0.2, 0.3, { peak: 0.05 })
+      tone(f * 3, 0.3, 0.35, { peak: 0.045 })
+    }
+  } catch {
+    /* noop */
+  }
+}
+
+/** ポップ: ゲーム終了 */
+export const playPopFinish = () => {
+  try {
+    ;[523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.12, 0.3, { peak: 0.06 }))
+  } catch {
+    /* noop */
+  }
+}
+
+/** ポップ: 特別メダルの効果音。虹=上昇アルペジオ / ダイヤ=きらめき / クラウン・完成=ファンファーレ */
+export const playPopSpecial = (kind) => {
+  try {
+    const seq =
+      kind === 'rainbow' ? [523, 587, 659, 784, 880, 1047]
+        : kind === 'diamond' ? [1568, 1976, 2349, 1976, 2637]
+          : [523, 659, 784, 1047, 1319]
+    seq.forEach((f, i) => tone(f, i * 0.07, kind === 'diamond' ? 0.16 : 0.28, { type: kind === 'diamond' ? 'triangle' : 'sine', peak: 0.07 }))
+  } catch {
+    /* noop */
+  }
+}

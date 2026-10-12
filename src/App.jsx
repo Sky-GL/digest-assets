@@ -7,13 +7,14 @@ import MatraLab from './components/MatraLab'
 import WordMode from './components/WordMode'
 import MemoryGame from './components/MemoryGame'
 import Challenge from './components/Challenge'
+import PopGame from './components/PopGame'
 import { useProgress } from './hooks/useProgress'
 import { buildStepQuiz, buildReviewQuiz } from './lib/quiz'
 import { stepMeta, MATRA_STEP } from './data/steps'
 
 export default function App() {
   const { progress, recordAnswer, finishStep, noteCombo, noteChallenge, reset, dismissMigration } = useProgress()
-  // view: { name: 'map' | 'cards' | 'quiz' | 'lab' | 'review' | 'words' | 'memory' | 'challenge', step?, questions? }
+  // view: { name: 'map' | 'cards' | 'quiz' | 'lab' | 'review' | 'words' | 'memory' | 'challenge' | 'pop', step?, questions? }
   const [view, setView] = useState({ name: 'map' })
 
   // 一度でも解答した文字のID集合(単語モード/神経衰弱の出題範囲に使う)
@@ -56,6 +57,7 @@ export default function App() {
             onWords={() => setView({ name: 'words', key: Date.now() })}
             onMemory={() => setView({ name: 'memory', key: Date.now() })}
             onChallenge={() => setView({ name: 'challenge', key: Date.now() })}
+            onPop={() => setView({ name: 'pop', key: Date.now() })}
           />
         )}
 
@@ -73,6 +75,8 @@ export default function App() {
             onRecord={noteChallenge}
           />
         )}
+
+        {view.name === 'pop' && <PopGame key={view.key} onBack={goMap} />}
 
         {view.name === 'memory' && (
           <MemoryGame key={view.key} learnedIds={learnedIds} onBack={goMap} onAnswer={recordAnswer} />

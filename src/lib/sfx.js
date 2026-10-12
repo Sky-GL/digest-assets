@@ -104,3 +104,16 @@ export const playPopFinish = () => {
     /* noop */
   }
 }
+
+/** ポップ: 特別メダルの効果音。虹=上昇アルペジオ / ダイヤ=きらめき / クラウン・完成=ファンファーレ */
+export const playPopSpecial = (kind) => {
+  try {
+    const seq =
+      kind === 'rainbow' ? [523, 587, 659, 784, 880, 1047]
+        : kind === 'diamond' ? [1568, 1976, 2349, 1976, 2637]
+          : [523, 659, 784, 1047, 1319]
+    seq.forEach((f, i) => tone(f, i * 0.07, kind === 'diamond' ? 0.16 : 0.28, { type: kind === 'diamond' ? 'triangle' : 'sine', peak: 0.07 }))
+  } catch {
+    /* noop */
+  }
+}

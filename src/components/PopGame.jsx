@@ -4,6 +4,7 @@ import { POP_STAGES, popStage, shade, withAlpha } from '../data/popStages'
 import { loadPop, savePop, addExp, expToNext, recordBest, markCleared } from '../lib/popStore'
 import { hasHindiVoice, speakText } from '../lib/speech'
 import { unlockAudio } from '../lib/sfx'
+import { SPECIALS } from '../lib/popSpecials'
 
 // DOM側の小さなメダル(進化の並び・結果表示・ステージ選択で使う)。描画はCanvas側(drawMedal)と揃える
 function Bubble({ item, size = 40, active = false, dim = false }) {
@@ -37,8 +38,14 @@ function HowTo({ onClose }) {
           <li>画面をタップ／ドラッグして位置を決め、指を離すと文字メダルが落ちます。</li>
           <li>同じ文字どうしがぶつかると合体して、次の文字に進化します。</li>
           <li>ステージの文字がまんべんなく降ってきます。落とす・合体するたびにヒンディー語で読み上げるので、音と形をセットで覚えましょう。</li>
-          <li>点線より上に積み上がるとゲームオーバー。最後の文字まで進化させるとステージクリアです。</li>
+          <li>点線より上に積み上がるとゲームオーバー。最後の文字まで進化させるとステージクリアで、完成した文字はボーナス点になって消えます。</li>
         </ol>
+        <p className="pop-howto-sub">ときどき降ってくる特別メダル(積み上がるほど出やすい)</p>
+        <ul className="pop-specials">
+          {Object.values(SPECIALS).map((sp) => (
+            <li key={sp.id}><span>{sp.icon}</span><span><strong>{sp.name}</strong> {sp.desc}</span></li>
+          ))}
+        </ul>
         <button className="btn primary" onClick={onClose}>わかった!</button>
       </div>
     </div>
@@ -52,7 +59,7 @@ export default function PopGame({ onBack }) {
   const [phase, setPhase] = useState('title') // 'title' | 'play'
   const [help, setHelp] = useState(false)
   const [score, setScore] = useState(0)
-  const [nextLevel, setNextLevel] = useState(0)
+  const [next, setNext] = useState({ level: 0 }) // 次に降るもの: { level } か { special }
   const [unlocked, setUnlocked] = useState(0) // このプレイで到達した最大レベル
   const [over, setOver] = useState(null) // { score }
   const [hint, setHint] = useState(true)
@@ -82,13 +89,24 @@ export default function PopGame({ onBack }) {
     if (phase !== 'play' || !canvasRef.current) return undefined
     const engine = new PopEngine(stage, {
       onScore: setScore,
-      onNext: setNextLevel,
+      onNext: setNext,
       onFirstInteract: () => setHint(false),
       onUnlock: (lv) => setUnlocked((u) => Math.max(u, lv)),
       onMerge: (lv) => {
         const { next, gained } = addExp(saveRef.current, lv + 1)
         commit(next)
         if (gained > 0) showToast({ kind: 'level', level: next.level }, 2200)
+      },
+      onSpecial: ({ kind, count, level, points }) => {
+        // 消せた数に応じて経験値も入る
+        const { next: sv, gained } = addExp(saveRef.current, Math.max(3, count * 2))
+        commit(sv)
+        const letter = stage.chars[level]
+        const text =
+          kind === 'complete' ? `👑 ${letter.glyph} 完成!`
+            : kind === 'crown' ? `👑 全部消えた! ${count}個`
+              : `💎 ${letter.glyph} を全部消した! ${count}個`
+        showToast({ kind: 'special', text, sub: `+${points}点${gained > 0 ? ` ・ Lv ${sv.level}` : ''}` }, 2200)
       },
       onStageClear: () => {
         if (!saveRef.current.cleared[stageId]) {
@@ -134,9 +152,10 @@ export default function PopGame({ onBack }) {
     setPhase('title')
   }
 
+  const nextLevel = next.special ? -1 : next.level
   const listen = () => {
     unlockAudio()
-    speakText(stage.chars[nextLevel].speak, { rate: 0.8 })
+    if (!next.special) speakText(stage.chars[next.level].speak, { rate: 0.8 })
   }
 
   // ---------- タイトル(ステージ選択) ----------
@@ -190,7 +209,8 @@ export default function PopGame({ onBack }) {
   }
 
   // ---------- プレイ ----------
-  const cur = stage.chars[Math.min(nextLevel, stage.chars.length - 1)]
+  const cur = next.special ? null : stage.chars[Math.min(next.level, stage.chars.length - 1)]
+  const spDef = next.special ? SPECIALS[next.special] : null
   const need = expToNext(save.level)
 
   return (
@@ -225,6 +245,9 @@ export default function PopGame({ onBack }) {
             ✨ Lv {toast.level} ✨
           </div>
         )}
+        {toast?.kind === 'special' && (
+          <div className="pop-toast">{toast.text}<small>{toast.sub}</small></div>
+        )}
         {toast?.kind === 'clear' && (
           <div className="pop-toast">🎉 STAGE {stageId} クリア!<small>最後の文字まで進化しました</small></div>
         )}
@@ -254,9 +277,16 @@ export default function PopGame({ onBack }) {
       </div>
 
       <div className="pop-listen">
-        <button className="btn" onClick={listen}>
-          🔊 <span className="pop-listen-glyph">{cur.glyph}</span> <small>{cur.label}</small>
-        </button>
+        {spDef ? (
+          <div className="pop-special-note">
+            <span className="pop-special-icon">{spDef.icon}</span>
+            <span><strong>{spDef.name}</strong> {spDef.desc}</span>
+          </div>
+        ) : (
+          <button className="btn" onClick={listen}>
+            🔊 <span className="pop-listen-glyph">{cur.glyph}</span> <small>{cur.label}</small>
+          </button>
+        )}
       </div>
       {help && <HowTo onClose={() => setHelp(false)} />}
     </div>

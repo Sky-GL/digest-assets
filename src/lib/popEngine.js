@@ -1,6 +1,7 @@
 import Matter from 'matter-js'
 import { shade, withAlpha } from '../data/popStages'
-import { playPopDrop, playPopMerge, playPopFinish, unlockAudio } from './sfx'
+import { playPopDrop, playPopMerge, playPopFinish, playPopSpecial, unlockAudio } from './sfx'
+import { SPECIALS, drawSpecial } from './popSpecials'
 import { primeSpeech, speakText } from './speech'
 
 // 「文字メダル」を落として、同じ文字同士を合体させて次の文字に進化させるマージゲームの本体。
@@ -15,13 +16,18 @@ const LINE_Y = 118 // この線より上にメダルがはみ出し続けると�
 const SPAWN_Y = 62
 const DROP_COOLDOWN = 380 // ms
 const OVER_MS = 1600
+const VANISH_MS = 1800 // 最終形が完成してから消えるまで
+const VANISH_BONUS = 300
+const CROWN_BONUS = 500
+const SPECIAL_MIN_DROPS = 5 // 最初の数手は特別メダルを出さない
+const SPECIAL_PITY = 14 // これだけ出なかったら必ず出す
 const STEP = 1000 / 60
 const FONT = '"Noto Sans Devanagari", "Nirmala UI", "Kohinoor Devanagari", sans-serif'
 
 // ---------- パーティクル(火花・破片) ----------
 const SPARK_COLORS = ['#f2c94c', '#e0902f', '#5aa0d6', '#e8eef7', '#3bb3a3']
 
-const burst = (list, x, y, power = 1) => {
+const burst = (list, x, y, power = 1, colors = SPARK_COLORS) => {
   const n = 16 + Math.floor(Math.random() * 6)
   for (let i = 0; i < n; i++) {
     const a = (Math.PI * 2 * i) / n + Math.random() * 0.4
@@ -36,7 +42,7 @@ const burst = (list, x, y, power = 1) => {
       rot: Math.random() * Math.PI,
       vr: (Math.random() - 0.5) * 0.4,
       kind: i % 3 === 0 ? 'shard' : i % 3 === 1 ? 'spark' : 'ring',
-      color: SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)],
+      color: colors[Math.floor(Math.random() * colors.length)],
     })
   }
 }
@@ -207,7 +213,7 @@ const popCurve = (v) => (v <= 0 ? 0 : Math.sin(v * Math.PI * 0.9))
 export class PopEngine {
   /**
    * @param stage  POP_STAGES の1要素
-   * @param cb     { onScore, onNext, onFirstInteract, onUnlock, onMerge, onStageClear, onFinish }
+   * @param cb     { onScore, onNext, onFirstInteract, onUnlock, onMerge, onSpecial, onStageClear, onFinish }
    */
   constructor(stage, cb) {
     this.cb = cb
@@ -228,7 +234,9 @@ export class PopEngine {
     this.rafId = 0
     this.bag = [] // 出す順にシャッフルした文字の袋。空になったら詰め直す
     this.lastSpawn = -1
-    this.nextLevel = this.rollSpawn()
+    this.drops = 0
+    this.sinceSpecial = 0
+    this.next = this.rollNext()
   }
 
   get maxLevel() {
@@ -239,7 +247,7 @@ export class PopEngine {
    * 次に降らせる文字を決める。学習のため、ステージの全文字を「シャッフルした袋」から1周ずつ出す。
    * 1周の間に各文字がちょうど1回ずつ出るので偏らない(最終形は合体でしか出ない)。
    */
-  rollSpawn() {
+  rollBag() {
     if (this.bag.length === 0) {
       const bag = Array.from({ length: this.maxLevel }, (_, i) => i)
       for (let i = bag.length - 1; i > 0; i--) {
@@ -252,6 +260,46 @@ export class PopEngine {
     }
     this.lastSpawn = this.bag.pop()
     return this.lastSpawn
+  }
+
+  /** 盤面の積み上がり具合(0=空〜1=ゲームオーバーライン) */
+  fullness() {
+    let top = H
+    for (const b of Composite.allBodies(this.engine.world)) {
+      if (!b.isStatic && b.medal) top = Math.min(top, b.position.y - this.radiusOf(b.medal))
+    }
+    return Math.max(0, Math.min(1, (H - top) / (H - LINE_Y)))
+  }
+
+  /**
+   * 次に降らせるものを決める: { level } か { special }。
+   * 特別メダルは積み上がるほど出やすく(詰まったときの救済)、一定回数出なければ必ず出る。
+   */
+  rollNext() {
+    this.sinceSpecial += 1
+    if (this.drops >= SPECIAL_MIN_DROPS) {
+      const full = this.fullness()
+      const chance = 0.04 + 0.3 * Math.max(0, full - 0.3)
+      if (this.sinceSpecial >= SPECIAL_PITY || Math.random() < chance) {
+        this.sinceSpecial = 0
+        return { special: this.pickSpecial(full) }
+      }
+    }
+    return { level: this.rollBag() }
+  }
+
+  // 虹が一番出やすく、詰まってくるほどダイヤ・クラウンの比重が上がる
+  pickSpecial(full) {
+    const w = { rainbow: 5, diamond: 3.5 * (1 + full), crown: 1.2 * (1 + 2 * full) }
+    let r = Math.random() * (w.rainbow + w.diamond + w.crown)
+    for (const k of ['rainbow', 'diamond', 'crown']) {
+      if ((r -= w[k]) < 0) return k
+    }
+    return 'rainbow'
+  }
+
+  radiusOf(m) {
+    return m.special ? SPECIALS[m.special].radius : this.chars[m.level].radius
   }
 
   mount(canvas) {
@@ -276,7 +324,7 @@ export class PopEngine {
     // Canvas描画は未ロードのWebフォントを自動では待たないので、先に読み込みを促しておく
     document.fonts?.load(`700 40px "Noto Sans Devanagari"`, 'अक').catch(() => {})
 
-    this.cb.onNext(this.nextLevel)
+    this.cb.onNext(this.next)
     this.lastFrame = performance.now()
     this.loop(this.lastFrame)
   }
@@ -309,9 +357,11 @@ export class PopEngine {
     this.confettiT = 0
     this.bag = []
     this.lastSpawn = -1
-    this.nextLevel = this.rollSpawn()
+    this.drops = 0
+    this.sinceSpecial = 0
+    this.next = this.rollNext()
     this.cb.onScore(0)
-    this.cb.onNext(this.nextLevel)
+    this.cb.onNext(this.next)
   }
 
   // ---- 入力 ----
@@ -328,7 +378,7 @@ export class PopEngine {
   }
 
   clampAim(x) {
-    const r = this.chars[this.nextLevel].radius
+    const r = this.radiusOf(this.next)
     return Math.max(r + 6, Math.min(W - r - 6, x))
   }
 
@@ -373,16 +423,34 @@ export class PopEngine {
     return b
   }
 
+  makeSpecial(x, y, kind) {
+    const b = Bodies.circle(x, y, SPECIALS[kind].radius, {
+      restitution: 0.16,
+      friction: 0.55,
+      frictionStatic: 0.7,
+      density: 0.0011,
+      slop: 0.02,
+    })
+    b.medal = { level: -1, special: kind, born: performance.now(), pop: 0, merging: false }
+    return b
+  }
+
   drop() {
     const now = performance.now()
     if (now - this.lastDrop < DROP_COOLDOWN) return
     this.lastDrop = now
-    const lv = this.nextLevel
-    Composite.add(this.engine.world, this.makeBall(this.aimX, SPAWN_Y, lv))
-    playPopDrop()
-    speakText(this.chars[lv].speak, { rate: 0.85, pitch: 1.2 })
-    this.nextLevel = this.rollSpawn()
-    this.cb.onNext(this.nextLevel)
+    const it = this.next
+    if (it.special) {
+      Composite.add(this.engine.world, this.makeSpecial(this.aimX, SPAWN_Y, it.special))
+      playPopDrop()
+    } else {
+      Composite.add(this.engine.world, this.makeBall(this.aimX, SPAWN_Y, it.level))
+      playPopDrop()
+      speakText(this.chars[it.level].speak, { rate: 0.85, pitch: 1.2 })
+    }
+    this.drops += 1
+    this.next = this.rollNext()
+    this.cb.onNext(this.next)
   }
 
   onCollide = (ev) => {
@@ -393,6 +461,16 @@ export class PopEngine {
       const ja = a.medal
       const jb = b.medal
       if (!ja || !jb || ja.merging || jb.merging) continue
+
+      // 特別メダルは文字に触れたときだけ効果が出る(特別どうしは何も起きない)
+      if (ja.special || jb.special) {
+        if (ja.special && jb.special) continue
+        const sp = ja.special ? a : b
+        const target = ja.special ? b : a
+        this.triggerSpecial(sp, target)
+        continue
+      }
+
       if (ja.level !== jb.level || ja.level >= this.maxLevel) continue
       ja.merging = true
       jb.merging = true
@@ -405,21 +483,71 @@ export class PopEngine {
     const y = (a.position.y + b.position.y) / 2
     Composite.remove(this.engine.world, a)
     Composite.remove(this.engine.world, b)
+    this.evolve(x, y, level)
+  }
 
+  /** (x,y) に level の文字を出す(合体・虹の共通処理)。最終形ならステージクリアで、少しして消える */
+  evolve(x, y, level, colors) {
     const isMax = level >= this.maxLevel
     const ball = this.makeBall(x, y, level)
     ball.medal.pop = 1
+    if (isMax) ball.medal.vanishAt = performance.now() + VANISH_MS
     Composite.add(this.engine.world, ball)
 
     playPopMerge(level, isMax)
     speakText(this.chars[level].speak, { rate: 0.8, pitch: isMax ? 1.6 : 1.3 })
-    burst(this.particles, x, y, isMax ? 1.6 : 1)
+    burst(this.particles, x, y, isMax ? 1.6 : 1, colors)
 
     this.score += (level + 1) * 10
     this.cb.onScore(this.score)
     this.cb.onUnlock(level)
     this.cb.onMerge(level)
     if (isMax) this.cb.onStageClear()
+  }
+
+  removeBody(b, colors) {
+    b.medal.merging = true
+    Composite.remove(this.engine.world, b)
+    burst(this.particles, b.position.x, b.position.y, 0.9, colors)
+  }
+
+  /** 盤面の通常の文字(特別メダルは含まない) */
+  letters() {
+    return Composite.allBodies(this.engine.world).filter((b) => !b.isStatic && b.medal && !b.medal.special && !b.medal.merging)
+  }
+
+  triggerSpecial(spBody, target) {
+    const kind = spBody.medal.special
+    const def = SPECIALS[kind]
+    const tl = target.medal.level
+    const here = { x: target.position.x, y: target.position.y }
+
+    if (kind === 'rainbow') {
+      if (tl >= this.maxLevel) return // 完成した文字にはもう進化先がない
+      spBody.medal.merging = true
+      target.medal.merging = true
+      Composite.remove(this.engine.world, spBody)
+      Composite.remove(this.engine.world, target)
+      playPopSpecial('rainbow')
+      this.evolve(here.x, here.y, tl + 1, def.colors)
+      return
+    }
+
+    // ダイヤ: 触れた文字と同じ文字を全部 / クラウン: 盤面の文字を全部
+    const victims = kind === 'diamond' ? this.letters().filter((b) => b.medal.level === tl) : this.letters()
+    spBody.medal.merging = true
+    Composite.remove(this.engine.world, spBody)
+    burst(this.particles, spBody.position.x, spBody.position.y, 1.4, def.colors)
+    let points = kind === 'crown' ? CROWN_BONUS : 50
+    for (const v of victims) {
+      points += (v.medal.level + 1) * 10
+      this.removeBody(v, def.colors)
+    }
+    playPopSpecial(kind)
+    if (kind === 'diamond') speakText(this.chars[tl].speak, { rate: 0.8, pitch: 1.3 })
+    this.score += points
+    this.cb.onScore(this.score)
+    this.cb.onSpecial({ kind, count: victims.length, level: tl, points })
   }
 
   step(dt) {
@@ -437,7 +565,17 @@ export class PopEngine {
       if (b.isStatic || !b.medal) continue
       const j = b.medal
       j.pop = Math.max(0, j.pop - dt * 3.2)
-      if (now - j.born > 900 && b.position.y - this.chars[j.level].radius < LINE_Y) over = true
+      if (j.vanishAt && now >= j.vanishAt && !j.merging) {
+        // 完成した最終形は、輝いてから消えてボーナスになる(盤面を塞ぎ続けないように)
+        this.removeBody(b, SPECIALS.crown.colors)
+        burst(this.particles, b.position.x, b.position.y, 1.6, SPECIALS.crown.colors)
+        playPopSpecial('crown')
+        this.score += VANISH_BONUS
+        this.cb.onScore(this.score)
+        this.cb.onSpecial({ kind: 'complete', count: 1, level: j.level, points: VANISH_BONUS })
+        continue
+      }
+      if (now - j.born > 900 && b.position.y - this.radiusOf(j) < LINE_Y) over = true
     }
     this.overTime = over ? this.overTime + dt * 1000 : 0
     if (!this.finished && this.overTime > OVER_MS) this.finish()
@@ -524,27 +662,38 @@ export class PopEngine {
 
     // 次に落とすメダルと狙い線
     if (!this.finished) {
-      const next = this.chars[this.nextLevel]
+      const nextR = this.radiusOf(this.next)
       ctx.save()
       ctx.setLineDash([4, 10])
       ctx.strokeStyle = 'rgba(90, 210, 255, 0.75)'
       ctx.lineWidth = 2.5
       ctx.beginPath()
-      ctx.moveTo(this.aimX, SPAWN_Y + next.radius)
+      ctx.moveTo(this.aimX, SPAWN_Y + nextR)
       ctx.lineTo(this.aimX, H - 20)
       ctx.stroke()
       ctx.restore()
       const bob = this.pointerDown ? 0 : Math.sin(t / 420) * 3
-      drawMedal(ctx, this.aimX, SPAWN_Y + bob, next, { alpha: 0.96 })
+      if (this.next.special) drawSpecial(ctx, this.aimX, SPAWN_Y + bob, this.next.special, { alpha: 0.96, t })
+      else drawMedal(ctx, this.aimX, SPAWN_Y + bob, this.chars[this.next.level], { alpha: 0.96 })
     }
 
+    const now = performance.now()
     for (const b of Composite.allBodies(this.engine.world)) {
       if (b.isStatic || !b.medal) continue
-      const pop = popCurve(b.medal.pop)
-      drawMedal(ctx, b.position.x, b.position.y, this.chars[b.medal.level], {
+      const m = b.medal
+      const pop = popCurve(m.pop)
+      if (m.special) {
+        drawSpecial(ctx, b.position.x, b.position.y, m.special, { scale: 1 + 0.2 * pop, t })
+        continue
+      }
+      // 完成した最終形は消える直前に点滅させる
+      const left = m.vanishAt ? m.vanishAt - now : Infinity
+      const alpha = left < 700 ? 0.55 + 0.45 * Math.abs(Math.sin(t / 45)) : 1
+      drawMedal(ctx, b.position.x, b.position.y, this.chars[m.level], {
         scale: 1 + 0.2 * pop,
         squash: -0.05 * pop,
-        aura: b.medal.level >= this.maxLevel,
+        aura: m.level >= this.maxLevel,
+        alpha,
       })
     }
 

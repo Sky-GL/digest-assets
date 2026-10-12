@@ -38,14 +38,16 @@ export const addExp = (p, amount) => {
   return { next: { ...p, level, exp }, gained }
 }
 
-// 降ってくる文字の最大レベル(0〜3)。Lvが上がるほど大きい文字も混ざる
-export const spawnTier = (level) => Math.min(3, Math.floor((level + 1) / 2))
+// 降ってくる文字の最大レベル(3〜5)。最初から4種類が降り、Lvが上がるほど大きい文字も混ざる
+// (Lv1〜3:レベル0〜3 / Lv4〜6:〜4 / Lv7〜:〜5)
+export const spawnTier = (level) => Math.min(5, 3 + Math.floor((level - 1) / 3))
 
-/** 出現プール。小さい文字ほど多く入れて出やすくする */
+/** 出現プール。小さい文字ほど多く入れて出やすくする(盤面が大きい文字で埋まりすぎないように) */
 export const spawnPool = (level) => {
+  const tier = spawnTier(level)
   const pool = []
-  for (let i = 0; i <= spawnTier(level); i++) {
-    for (let k = 0; k < Math.max(1, 4 - i); k++) pool.push(i)
+  for (let i = 0; i <= tier; i++) {
+    for (let k = 0; k < tier + 1 - i; k++) pool.push(i)
   }
   return pool
 }

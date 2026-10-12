@@ -229,6 +229,7 @@ export class PopEngine {
     this.lastFrame = 0
     this.confettiT = 0
     this.rafId = 0
+    this.recent = [-1, -1] // 直近2回に出した文字(同じ文字の3連続を防ぐ)
     this.nextLevel = this.rollSpawn()
   }
 
@@ -241,8 +242,13 @@ export class PopEngine {
   }
 
   rollSpawn() {
-    const lv = this.pool[Math.floor(Math.random() * this.pool.length)]
-    return Math.min(lv, this.maxLevel)
+    let lv = 0
+    for (let i = 0; i < 8; i++) {
+      lv = Math.min(this.pool[Math.floor(Math.random() * this.pool.length)], this.maxLevel)
+      if (!(this.recent[0] === lv && this.recent[1] === lv)) break
+    }
+    this.recent = [this.recent[1], lv]
+    return lv
   }
 
   mount(canvas) {
@@ -298,6 +304,7 @@ export class PopEngine {
     this.accumulator = 0
     this.finished = false
     this.confettiT = 0
+    this.recent = [-1, -1]
     this.nextLevel = this.rollSpawn()
     this.cb.onScore(0)
     this.cb.onNext(this.nextLevel)

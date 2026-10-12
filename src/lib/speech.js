@@ -60,14 +60,31 @@ export const speak = async (char, { rate = 0.75 } = {}) => {
 }
 
 // 任意の文字列(マートラ合成音節など)を読み上げる
-export const speakText = async (text, { rate = 0.75 } = {}) => {
+export const speakText = async (text, { rate = 0.75, pitch = 1 } = {}) => {
   if (!text || !speechSupported() || !hasHindiVoice()) return 'none'
   window.speechSynthesis.cancel()
   const u = new SpeechSynthesisUtterance(text)
   u.lang = 'hi-IN'
   u.rate = rate
+  u.pitch = pitch
   const voice = loadVoices().find((v) => /^hi(-|_)?/i.test(v.lang))
   if (voice) u.voice = voice
   window.speechSynthesis.speak(u)
   return 'tts'
+}
+
+// iOS Safari は最初の発話がユーザー操作内でないと以降も鳴らないことがあるため、
+// 無音の発話で一度だけ「解錠」しておく(物理演算ループ内で鳴らす用途向け)
+let primed = false
+export const primeSpeech = () => {
+  if (primed || !speechSupported()) return
+  primed = true
+  try {
+    const u = new SpeechSynthesisUtterance(' ')
+    u.volume = 0
+    u.lang = 'hi-IN'
+    window.speechSynthesis.speak(u)
+  } catch {
+    /* noop */
+  }
 }

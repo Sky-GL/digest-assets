@@ -51,6 +51,7 @@ Stepにロックは無く、StepMapのどのカードからでも自由に始め
 - **双方向4択クイズ** — 「文字 → 発音」と「発音 → 文字」を交互に出題。ダミー選択肢は同じ調音位置グループから優先的に選ぶため、そり舌音 ट と歯音 त のような紛らわしい対比が自然に練習できる。
 - **マートラ実験室(Step11)** — 子音 × マートラを自由に組み合わせて音節を合成。選んだ子音の全12音節を一覧再生できる。クイズも「क + ा = ?」形式の組み合わせ問題を6割の比率で重点出題。
 - **復習モード** — 実際に一度でも解答した文字の中から、誤答回数と最終学習日時で優先度を計算する簡易スペースドリペティション。間違えた文字ほど、久しく見ていない文字ほど先に出る。
+- **ポップ(マージゲーム)** — 「Kana Pop」のデーヴァナーガリー版。文字ゼリーを落として、同じ文字どうしを合体させて次の文字に進化させる(スイカゲーム型)。落とす・合体するたびにその文字を hi-IN で読み上げる。全6ステージ(母音 / क行・च行 / ट行・त行 / प行・半母音 / 摩擦音・結合 / マートラ)×各10文字で、小さい文字→大きい文字の順に進化し、最後の文字まで進化させるとステージクリア(★)。プレイヤーLvが上がるほど大きい文字も降ってくる。物理は `matter-js`、描画は Canvas。ステージは自由選択(ロックなし)。進捗は本編とは別に localStorage(`devanagari-pop-v1`)へ保存。
 - **進捗保存** — localStorage(`devanagari-quest-v1`)に Lv/XP・Stepクリア状況(★)・文字ごとの正誤回数・連続学習日数・最大コンボを保存。カリキュラム構成が変わった場合は文字ごとの正誤記録とXPを引き継ぎつつ、Stepのクリア状況だけをリセットし、その旨を一度だけ画面上部のバナーで知らせる(`src/lib/storage.js` の `version` によるマイグレーション)。
 
 ## 発音再生
@@ -100,12 +101,15 @@ src/
 ├── data/devanagari-data.json   全62文字のデータ
 ├── data/steps.js               Step メタ情報・検索ヘルパー・音節合成
 ├── data/pairs.js               重ね比較(GlyphDiff)のペア定義
+├── data/popStages.js           ポップの6ステージ定義(文字・半径・色)
+├── lib/popEngine.js            ポップ本体(matter-js 物理 + Canvas 描画)
+├── lib/popStore.js             ポップの進捗(Lv/経験値/ベスト/クリア)
 ├── lib/speech.js               発音(TTS + mp3フォールバック)
 ├── lib/quiz.js                 出題生成(双方向4択・マートラ組み合わせ)
 ├── lib/srs.js                  復習優先度スコア
 ├── lib/storage.js              localStorage 入出力・連続日数・カリキュラム移行
 ├── hooks/useProgress.js        進捗ステート(XP/Lv/Stepクリア判定)
-└── components/                 HUD / StepMap / Flashcards / Quiz / MatraLab / GlyphDiff / SpeakButton
+└── components/                 HUD / StepMap / Flashcards / Quiz / MatraLab / GlyphDiff / SpeakButton / PopGame
 ```
 
 ## デプロイ

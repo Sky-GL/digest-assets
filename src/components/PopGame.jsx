@@ -1,23 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PopEngine } from '../lib/popEngine'
-import { POP_STAGES, popStage, shade } from '../data/popStages'
+import { POP_STAGES, popStage, shade, withAlpha } from '../data/popStages'
 import { loadPop, savePop, addExp, expToNext, spawnTier, recordBest, markCleared } from '../lib/popStore'
 import { hasHindiVoice, speakText } from '../lib/speech'
 import { unlockAudio } from '../lib/sfx'
 
-const jellyBg = (base) =>
-  `radial-gradient(circle at 32% 28%, ${shade(base, 0.55)}, ${base} 62%, ${shade(base, -0.14)})`
-
-// DOM側の小さなゼリー(進化の並び・結果表示・ステージ選択で使う)
+// DOM側の小さなメダル(進化の並び・結果表示・ステージ選択で使う)。描画はCanvas側(drawMedal)と揃える
 function Bubble({ item, size = 40, active = false, dim = false }) {
   const long = [...item.glyph].length > 2
   return (
     <span
       className={`pop-bubble ${active ? 'active' : ''} ${dim ? 'dim' : ''}`}
-      style={{ width: size, height: size, background: jellyBg(item.base) }}
+      style={{
+        width: size,
+        height: size,
+        borderColor: item.base,
+        boxShadow: `0 0 ${size * 0.25}px ${withAlpha(item.base, 0.45)}`,
+      }}
     >
-      <span className="pop-b-glyph" style={{ fontSize: size * (long ? 0.34 : 0.44) }}>{item.glyph}</span>
-      <span className="pop-b-label" style={{ fontSize: Math.max(7, size * 0.19) }}>{item.label}</span>
+      <span
+        className="pop-b-glyph"
+        style={{ fontSize: size * (long ? 0.34 : 0.46), color: shade(item.base, 0.7), textShadow: `0 0 8px ${withAlpha(item.base, 0.8)}` }}
+      >
+        {item.glyph}
+      </span>
+      <span className="pop-b-label" style={{ fontSize: Math.max(7, size * 0.19), color: shade(item.base, 0.35) }}>{item.label}</span>
     </span>
   )
 }
@@ -28,7 +35,7 @@ function HowTo({ onClose }) {
       <div className="pop-card" onClick={(e) => e.stopPropagation()}>
         <h2>あそびかた</h2>
         <ol className="pop-howto">
-          <li>画面をタップ／ドラッグして位置を決め、指を離すと文字ゼリーが落ちます。</li>
+          <li>画面をタップ／ドラッグして位置を決め、指を離すと文字メダルが落ちます。</li>
           <li>同じ文字どうしがぶつかると合体して、次の文字に進化します。</li>
           <li>落とす・合体するたびに、その文字をヒンディー語で読み上げます。音と形をセットで覚えましょう。</li>
           <li>点線より上に積み上がるとゲームオーバー。最後の文字まで進化させるとステージクリアです。</li>
@@ -154,7 +161,7 @@ export default function PopGame({ onBack }) {
             ))}
           </div>
           <h1>デーヴァナーガリー・ポップ</h1>
-          <p className="pop-tag">MERGE &amp; LEARN DEVANAGARI</p>
+          <p className="pop-tag">MERGE · EVOLVE · MASTER DEVANAGARI</p>
           <div className="pop-pills">
             <span className="pop-pill">Lv <strong>{save.level}</strong></span>
             {save.best[stageId] > 0 && <span className="pop-pill">👑 <strong>{save.best[stageId]}</strong></span>}

@@ -1,9 +1,10 @@
 import { charById, syllable } from './steps'
 
 // ポップ(マージゲーム)のステージ定義。1ステージ=10文字で、小さい文字→大きい文字の順に進化する。
+// base は各レベルのメダルのアクセント色(スチール→青→緑→金→赤と、進化するほど熱い色になる)。
 // 並びは伝統的なヴァルナマーラー(子音表)の順。
 
-const COLORS = ['#FFB6C1', '#FFD1BA', '#FFF2A3', '#B9F3CC', '#C1E3FE', '#D9C7F7', '#FFC6DF', '#A9E9E4', '#FFDFA6', '#CFE6AE']
+const COLORS = ['#8a9bb0', '#5aa0d6', '#3f7fe0', '#3bb3a3', '#4fae5f', '#c9b23c', '#e0902f', '#e0602f', '#d63c3c', '#f2c94c']
 
 const MIN_R = 26
 const MAX_R = 116
@@ -48,9 +49,15 @@ export const POP_STAGES = RAW.map((s, i) => ({
 
 export const popStage = (id) => POP_STAGES[Math.max(0, Math.min(POP_STAGES.length - 1, id - 1))]
 
-// "#RRGGBB" を明るく(t>0)/暗く(t<0)する。ゼリーのグラデーション用
+// "#RRGGBB" を明るく(t>0)/暗く(t<0)する。メダルのグラデーション用
 export const shade = (hex, t) => {
   const n = parseInt(hex.slice(1), 16)
   const f = (v) => Math.round(t >= 0 ? v + (255 - v) * t : v * (1 + t))
   return `rgb(${f((n >> 16) & 255)}, ${f((n >> 8) & 255)}, ${f(n & 255)})`
+}
+
+// "#RRGGBB" + 透明度 → rgba文字列(発光・縁取り用)
+export const withAlpha = (hex, a) => {
+  const n = parseInt(hex.slice(1), 16)
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`
 }

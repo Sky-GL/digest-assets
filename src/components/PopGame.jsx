@@ -38,7 +38,7 @@ function HowTo({ onClose }) {
           <li>画面をタップ／ドラッグして位置を決め、指を離すと文字メダルが落ちます。</li>
           <li>同じ文字どうしがぶつかると合体して、次の文字に進化します。</li>
           <li>ステージの文字がまんべんなく降ってきます。落とす・合体するたびにヒンディー語で読み上げるので、音と形をセットで覚えましょう。</li>
-          <li>点線より上に積み上がるとゲームオーバー。最後の文字まで進化させるとステージクリアで、完成した文字はボーナス点になって消えます。</li>
+          <li>点線より上に積み上がるとゲームオーバー。最後の文字まで進化させるとステージクリアで、完成した文字はボーナス点になって消えます(完成した文字どうしが触れるとダブルボーナス)。</li>
         </ol>
         <p className="pop-howto-sub">ときどき降ってくる特別メダル(積み上がるほど出やすい)</p>
         <ul className="pop-specials">
@@ -103,7 +103,7 @@ export default function PopGame({ onBack }) {
         commit(sv)
         const letter = stage.chars[level]
         const text =
-          kind === 'complete' ? `👑 ${letter.glyph} 完成!`
+          kind === 'complete' ? (count > 1 ? `👑 ${letter.glyph} ダブル完成!` : `👑 ${letter.glyph} 完成!`)
             : kind === 'crown' ? `👑 全部消えた! ${count}個`
               : `💎 ${letter.glyph} を全部消した! ${count}個`
         showToast({ kind: 'special', text, sub: `+${points}点${gained > 0 ? ` ・ Lv ${sv.level}` : ''}` }, 2200)

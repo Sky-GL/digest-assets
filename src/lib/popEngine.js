@@ -19,6 +19,7 @@ const OVER_MS = 1600
 const VANISH_MS = 1800 // 最終形が完成してから消えるまで
 const VANISH_BONUS = 300
 const CROWN_BONUS = 500
+const PAIR_BONUS = 400 // 最終形どうしが触れたときの上乗せ
 const SPECIAL_MIN_DROPS = 5 // 最初の数手は特別メダルを出さない
 const SPECIAL_PITY = 14 // これだけ出なかったら必ず出す
 const STEP = 1000 / 60
@@ -471,6 +472,13 @@ export class PopEngine {
         continue
       }
 
+      // 完成した最終形どうしが触れたら、2つまとめて消えて大ボーナス
+      if (ja.level >= this.maxLevel && jb.level >= this.maxLevel) {
+        ja.merging = true
+        jb.merging = true
+        this.completePair(a, b)
+        continue
+      }
       if (ja.level !== jb.level || ja.level >= this.maxLevel) continue
       ja.merging = true
       jb.merging = true
@@ -503,6 +511,20 @@ export class PopEngine {
     this.cb.onUnlock(level)
     this.cb.onMerge(level)
     if (isMax) this.cb.onStageClear()
+  }
+
+  completePair(a, b) {
+    const colors = SPECIALS.crown.colors
+    for (const body of [a, b]) {
+      Composite.remove(this.engine.world, body)
+      burst(this.particles, body.position.x, body.position.y, 1.8, colors)
+    }
+    playPopSpecial('crown')
+    speakText(this.chars[this.maxLevel].speak, { rate: 0.8, pitch: 1.6 })
+    const points = VANISH_BONUS * 2 + PAIR_BONUS
+    this.score += points
+    this.cb.onScore(this.score)
+    this.cb.onSpecial({ kind: 'complete', count: 2, level: this.maxLevel, points })
   }
 
   removeBody(b, colors) {

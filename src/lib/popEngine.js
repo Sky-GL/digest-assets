@@ -105,12 +105,15 @@ const roundRect = (ctx, x, y, w, h, r) => {
 }
 
 /**
- * 文字メダル: 暗いメタルの円盤に、レベル色の縁と発光する文字。
- * item.base がそのレベルのアクセント色。最終形は金の光輪(aura)をまとう。
+ * 文字メダル: レベル色に染めた暗い円盤+太いリング+ほぼ白の大きな文字。
+ * 視認性のため、(1)文字は白に近い色+暗い縁取りで背景から浮かせる (2)ボディをレベル色で染めて
+ * 隣のレベルと見分けやすくする (3)小さいメダルはローマ字を省いて文字を大きく描く。
+ * 最終形(aura)は金の光輪をまとう。
  */
 export const drawMedal = (ctx, x, y, item, { scale = 1, alpha = 1, squash = 0, aura = false } = {}) => {
   const s = item.radius * scale
   const accent = item.base
+  const showLabel = item.radius >= 38 // 小さいメダルではローマ字が潰れるので文字を優先する
   ctx.save()
   ctx.globalAlpha = alpha
   ctx.translate(x, y)
@@ -118,77 +121,83 @@ export const drawMedal = (ctx, x, y, item, { scale = 1, alpha = 1, squash = 0, a
 
   // 接地影
   ctx.save()
-  ctx.globalAlpha = alpha * 0.35
+  ctx.globalAlpha = alpha * 0.4
   ctx.fillStyle = '#000'
   ctx.beginPath()
-  ctx.ellipse(0, s * 0.86, s * 0.78, s * 0.16, 0, 0, Math.PI * 2)
+  ctx.ellipse(0, s * 0.88, s * 0.78, s * 0.15, 0, 0, Math.PI * 2)
   ctx.fill()
   ctx.restore()
 
-  // 本体(暗いメタル)+ 縁のグロー
-  const body = ctx.createRadialGradient(-s * 0.35, -s * 0.45, s * 0.1, 0, 0, s * 1.1)
-  body.addColorStop(0, '#34445a')
-  body.addColorStop(0.55, '#19222f')
-  body.addColorStop(1, '#0e151f')
+  // 本体: レベル色で染めた暗いメタル(色でレベルを判別できるように)+ 外側のグロー
+  const body = ctx.createRadialGradient(-s * 0.3, -s * 0.4, s * 0.05, 0, 0, s * 1.05)
+  body.addColorStop(0, shade(accent, -0.35))
+  body.addColorStop(0.6, shade(accent, -0.68))
+  body.addColorStop(1, shade(accent, -0.85))
   ctx.beginPath()
   ctx.arc(0, 0, s, 0, Math.PI * 2)
   ctx.fillStyle = body
-  ctx.shadowColor = withAlpha(accent, aura ? 0.9 : 0.45)
-  ctx.shadowBlur = s * (aura ? 0.5 : 0.22)
+  ctx.shadowColor = withAlpha(accent, aura ? 0.95 : 0.55)
+  ctx.shadowBlur = s * (aura ? 0.55 : 0.25)
   ctx.fill()
   ctx.shadowColor = 'transparent'
   ctx.shadowBlur = 0
 
-  // 縁(上が明るく下が暗い金属リング)
+  // 太いリング(上が明るく下が暗い金属)。盤面の暗い背景との境界をくっきりさせる
+  const rw = Math.max(3, s * 0.12)
   const rim = ctx.createLinearGradient(0, -s, 0, s)
-  rim.addColorStop(0, shade(accent, 0.55))
+  rim.addColorStop(0, shade(accent, 0.6))
   rim.addColorStop(0.5, accent)
-  rim.addColorStop(1, shade(accent, -0.45))
-  ctx.lineWidth = Math.max(2, s * 0.085)
+  rim.addColorStop(1, shade(accent, -0.25))
+  ctx.lineWidth = rw
   ctx.strokeStyle = rim
   ctx.beginPath()
-  ctx.arc(0, 0, s - ctx.lineWidth / 2, 0, Math.PI * 2)
-  ctx.stroke()
-
-  // 内側の細いリング(刻印)
-  ctx.lineWidth = Math.max(1, s * 0.022)
-  ctx.strokeStyle = withAlpha(accent, 0.38)
-  ctx.beginPath()
-  ctx.arc(0, 0, s * 0.8, 0, Math.PI * 2)
+  ctx.arc(0, 0, s - rw / 2, 0, Math.PI * 2)
   ctx.stroke()
 
   // 左上のベベルハイライト
   ctx.save()
-  ctx.strokeStyle = 'rgba(255,255,255,0.22)'
-  ctx.lineWidth = Math.max(1.2, s * 0.03)
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)'
+  ctx.lineWidth = Math.max(1.2, s * 0.035)
   ctx.beginPath()
-  ctx.arc(0, 0, s * 0.9, Math.PI * 1.08, Math.PI * 1.55)
+  ctx.arc(0, 0, s - rw * 1.4, Math.PI * 1.1, Math.PI * 1.5)
   ctx.stroke()
   ctx.restore()
 
-  // デーヴァナーガリー文字: 内側リングに収まるよう、長い結合文字は縮小する
+  // デーヴァナーガリー文字: 大きく描き、リングの内側に収まらない長い結合文字だけ縮小する
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  let size = s * 0.82
+  const inner = s - rw
+  let size = inner * (showLabel ? 1.0 : 1.12)
   ctx.font = `700 ${size}px ${FONT}`
   const w = ctx.measureText(item.glyph).width
-  const maxW = s * 1.18
+  const maxW = inner * 1.55
   if (w > maxW) {
     size *= maxW / w
     ctx.font = `700 ${size}px ${FONT}`
   }
-  const glyphColor = shade(accent, 0.7)
-  ctx.shadowColor = withAlpha(accent, 0.85)
-  ctx.shadowBlur = s * 0.2
-  ctx.fillStyle = glyphColor
-  ctx.fillText(item.glyph, 0, -s * 0.1)
+  const gy = showLabel ? -inner * 0.14 : 0
+  // 暗い縁取り → 発光 → ほぼ白の文字、の順で重ねて背景から浮かせる
+  ctx.lineJoin = 'round'
+  ctx.lineWidth = Math.max(3, size * 0.14)
+  ctx.strokeStyle = 'rgba(5, 9, 16, 0.9)'
+  ctx.strokeText(item.glyph, 0, gy)
+  ctx.shadowColor = withAlpha(accent, 0.9)
+  ctx.shadowBlur = s * 0.16
+  ctx.fillStyle = '#ffffff'
+  ctx.fillText(item.glyph, 0, gy)
   ctx.shadowColor = 'transparent'
   ctx.shadowBlur = 0
 
-  // ローマ字(IAST)
-  ctx.font = `700 ${Math.max(8, s * 0.24)}px "Noto Sans JP", system-ui, sans-serif`
-  ctx.fillStyle = shade(accent, 0.4)
-  ctx.fillText(item.label, 0, s * 0.56)
+  // ローマ字(IAST): 暗い縁取り付きの明るい色で、十分な大きさにする
+  if (showLabel) {
+    const ls = Math.max(11, inner * 0.3)
+    ctx.font = `800 ${ls}px "Noto Sans JP", system-ui, sans-serif`
+    ctx.lineWidth = Math.max(3, ls * 0.28)
+    ctx.strokeStyle = 'rgba(5, 9, 16, 0.9)'
+    ctx.strokeText(item.label, 0, inner * 0.62)
+    ctx.fillStyle = shade(accent, 0.65)
+    ctx.fillText(item.label, 0, inner * 0.62)
+  }
 
   ctx.restore()
 }
@@ -460,7 +469,7 @@ export class PopEngine {
     ctx.save()
     roundRect(ctx, 6, 30, W - 12, H - 36, 22)
     ctx.clip()
-    ctx.strokeStyle = 'rgba(140, 170, 210, 0.06)'
+    ctx.strokeStyle = 'rgba(140, 170, 210, 0.045)'
     ctx.lineWidth = 1
     for (let gx = 6; gx < W; gx += 42) {
       ctx.beginPath()
@@ -486,20 +495,29 @@ export class PopEngine {
     ctx.save()
     ctx.setLineDash([10, 8])
     ctx.lineWidth = 2 + danger * 2
-    ctx.strokeStyle = `rgba(230, 80, 70, ${0.4 + danger * 0.5 + Math.sin(t / 150) * 0.15 * danger})`
+    ctx.strokeStyle = `rgba(255, 90, 80, ${0.6 + danger * 0.4})`
     ctx.beginPath()
     ctx.moveTo(18, LINE_Y)
     ctx.lineTo(W - 18, LINE_Y)
     ctx.stroke()
     ctx.restore()
+    // ラインを越えて積もり始めたら、盤面の枠を赤く点滅させて危険を知らせる
+    if (danger > 0) {
+      ctx.save()
+      ctx.lineWidth = 4
+      ctx.strokeStyle = `rgba(255, 80, 70, ${0.3 + 0.5 * Math.abs(Math.sin(t / 110)) * danger})`
+      roundRect(ctx, 6, 30, W - 12, H - 36, 22)
+      ctx.stroke()
+      ctx.restore()
+    }
 
     // 次に落とすメダルと狙い線
     if (!this.finished) {
       const next = this.chars[this.nextLevel]
       ctx.save()
       ctx.setLineDash([4, 10])
-      ctx.strokeStyle = 'rgba(90, 200, 240, 0.55)'
-      ctx.lineWidth = 2
+      ctx.strokeStyle = 'rgba(90, 210, 255, 0.75)'
+      ctx.lineWidth = 2.5
       ctx.beginPath()
       ctx.moveTo(this.aimX, SPAWN_Y + next.radius)
       ctx.lineTo(this.aimX, H - 20)

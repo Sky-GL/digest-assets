@@ -8,6 +8,7 @@ import { unlockAudio } from '../lib/sfx'
 // DOM側の小さなメダル(進化の並び・結果表示・ステージ選択で使う)。描画はCanvas側(drawMedal)と揃える
 function Bubble({ item, size = 40, active = false, dim = false }) {
   const long = [...item.glyph].length > 2
+  const showLabel = size >= 36
   return (
     <span
       className={`pop-bubble ${active ? 'active' : ''} ${dim ? 'dim' : ''}`}
@@ -15,16 +16,14 @@ function Bubble({ item, size = 40, active = false, dim = false }) {
         width: size,
         height: size,
         borderColor: item.base,
-        boxShadow: `0 0 ${size * 0.25}px ${withAlpha(item.base, 0.45)}`,
+        background: `radial-gradient(circle at 32% 26%, ${shade(item.base, -0.35)}, ${shade(item.base, -0.68)} 60%, ${shade(item.base, -0.85)})`,
+        boxShadow: `0 0 ${size * 0.25}px ${withAlpha(item.base, 0.5)}`,
       }}
     >
-      <span
-        className="pop-b-glyph"
-        style={{ fontSize: size * (long ? 0.34 : 0.46), color: shade(item.base, 0.7), textShadow: `0 0 8px ${withAlpha(item.base, 0.8)}` }}
-      >
-        {item.glyph}
-      </span>
-      <span className="pop-b-label" style={{ fontSize: Math.max(7, size * 0.19), color: shade(item.base, 0.35) }}>{item.label}</span>
+      <span className="pop-b-glyph" style={{ fontSize: size * (long ? 0.4 : showLabel ? 0.5 : 0.58) }}>{item.glyph}</span>
+      {showLabel && (
+        <span className="pop-b-label" style={{ fontSize: Math.max(9, size * 0.22), color: shade(item.base, 0.65) }}>{item.label}</span>
+      )}
     </span>
   )
 }
@@ -209,7 +208,7 @@ export default function PopGame({ onBack }) {
       <div className="pop-chain">
         {stage.chars.map((c, i) => (
           <span key={c.glyph} className="pop-chain-item">
-            <Bubble item={c} size={36} active={i === nextLevel} dim={i > unlocked} />
+            <Bubble item={c} size={42} active={i === nextLevel} dim={i > unlocked} />
             {i < stage.chars.length - 1 && <span className="pop-arrow">▸</span>}
           </span>
         ))}
@@ -248,7 +247,7 @@ export default function PopGame({ onBack }) {
               <p className="pop-learned">今回出会った文字</p>
               <div className="pop-learned-row">
                 {stage.chars.slice(0, unlocked + 1).map((c) => (
-                  <Bubble key={c.glyph} item={c} size={38} />
+                  <Bubble key={c.glyph} item={c} size={44} />
                 ))}
               </div>
               <div className="cta-row">

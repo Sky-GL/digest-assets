@@ -23,7 +23,7 @@ export const savePop = (p) => {
   }
 }
 
-export const expToNext = (level) => 40 + (level - 1) * 35
+export const expToNext = (level) => 100 + (level - 1) * 90
 
 /** 経験値を加算。{ next, gained(上がったLv数) } を返す(保存は呼び出し側) */
 export const addExp = (p, amount) => {

@@ -1,18 +1,17 @@
 import { charById, syllable } from './steps'
 
-// ポップ(マージゲーム)のステージ定義。1ステージ=10文字で、小さい文字→大きい文字の順に進化する。
-// base は各レベルのメダルのアクセント色。隣り合うレベルで色相が大きく変わるようにして見分けやすくしてある
-// (スチール→シアン→青→紫→緑→黄→橙→赤→マゼンタ→金)。
-// 並びは伝統的なヴァルナマーラー(子音表)の順。
+// ポップ(マージゲーム)のステージ定義。元の「かなポップ」と同じく1ステージ=5文字(あいうえお/かきくけこ…)で、
+// 小さい文字→大きい文字の順に進化する。5文字なのは、ステージクリアに「最終形を16個」必要とするため
+// (最終形+最終形→👑、👑+👑→💎、💎+💎→🌈、🌈+🌈→クリア)。文字数が多いと必要な数が倍々で増えてクリアできなくなる。
+// デーヴァナーガリーは各行(क ख ग घ ङ など)がちょうど5文字なので、そのまま1ステージにできる。
+// base は各レベルのメダルのアクセント色(スチール→シアン→紫→橙→金)。隣り合うレベルで色相が大きく変わる。
 
-const COLORS = ['#a5b4c4', '#38d0f0', '#4f7cff', '#a070ff', '#3ddc84', '#f2d03b', '#ff9a2e', '#ff4d4d', '#e0409a', '#ffd966']
+const COLORS = ['#a5b4c4', '#38d0f0', '#a070ff', '#ff9a2e', '#ffd966']
 
-// 全文字がランダムに降ってくるので、大きい文字が降っても詰まらないよう大きさの差は小さめにする。
-// レベルの見分けは大きさより色(とリング)で行う。
 const MIN_R = 30
-const MAX_R = 54
+const MAX_R = 56
 
-// レベル0〜n-1 の半径を等比で補間(最小30→最大54)
+// レベル0〜n-1 の半径を等比で補間(最小30→最大56)
 const radiusOf = (level, count) =>
   count <= 1 ? MIN_R : Math.round(MIN_R * Math.pow(MAX_R / MIN_R, level / (count - 1)))
 
@@ -30,12 +29,18 @@ const syllables = (baseId, matraIds) =>
   })
 
 const RAW = [
-  { title: '母音', subtitle: '短い・長い・複合', items: fromIds(['a', 'aa', 'i', 'ii', 'u', 'uu', 'e', 'ai', 'o', 'au']) },
-  { title: 'क行・च行', subtitle: '喉の奥と口蓋', items: fromIds(['ka', 'kha', 'ga', 'gha', 'nga', 'ca', 'cha', 'ja', 'jha', 'nya']) },
-  { title: 'ट行・त行', subtitle: 'そり舌と歯', items: fromIds(['tta', 'ttha', 'dda', 'ddha', 'nna', 'ta', 'tha', 'da', 'dha', 'na']) },
-  { title: 'प行・半母音', subtitle: '唇・半母音・श', items: fromIds(['pa', 'pha', 'ba', 'bha', 'ma', 'ya', 'ra', 'la', 'va', 'sha']) },
-  { title: '摩擦音・結合', subtitle: 'ष स ह と結合文字', items: fromIds(['ssha', 'sa', 'ha', 'ri', 'am', 'ah', 'ksha', 'tra', 'gya', 'shra']) },
-  { title: 'マートラ', subtitle: 'क に母音記号をつける', items: syllables('ka', ['m_aa', 'm_i', 'm_ii', 'm_u', 'm_uu', 'm_ri', 'm_e', 'm_ai', 'm_o', 'm_au']) },
+  { title: '母音①', subtitle: 'अ आ इ ई उ', items: fromIds(['a', 'aa', 'i', 'ii', 'u']) },
+  { title: '母音②', subtitle: 'ऊ ए ऐ ओ औ', items: fromIds(['uu', 'e', 'ai', 'o', 'au']) },
+  { title: 'क行', subtitle: '喉の奥の音', items: fromIds(['ka', 'kha', 'ga', 'gha', 'nga']) },
+  { title: 'च行', subtitle: '口蓋の音', items: fromIds(['ca', 'cha', 'ja', 'jha', 'nya']) },
+  { title: 'ट行', subtitle: 'そり舌の音', items: fromIds(['tta', 'ttha', 'dda', 'ddha', 'nna']) },
+  { title: 'त行', subtitle: '歯の音', items: fromIds(['ta', 'tha', 'da', 'dha', 'na']) },
+  { title: 'प行', subtitle: '唇の音', items: fromIds(['pa', 'pha', 'ba', 'bha', 'ma']) },
+  { title: '半母音', subtitle: 'य र ल व श', items: fromIds(['ya', 'ra', 'la', 'va', 'sha']) },
+  { title: '摩擦音', subtitle: 'ष स ह अं अः', items: fromIds(['ssha', 'sa', 'ha', 'am', 'ah']) },
+  { title: '結合文字', subtitle: 'क्ष त्र ज्ञ श्र ऋ', items: fromIds(['ksha', 'tra', 'gya', 'shra', 'ri']) },
+  { title: 'マートラ①', subtitle: 'क + ा ि ी ु ू', items: syllables('ka', ['m_aa', 'm_i', 'm_ii', 'm_u', 'm_uu']) },
+  { title: 'マートラ②', subtitle: 'क + ृ े ै ो ौ', items: syllables('ka', ['m_ri', 'm_e', 'm_ai', 'm_o', 'm_au']) },
 ]
 
 export const POP_STAGES = RAW.map((s, i) => ({

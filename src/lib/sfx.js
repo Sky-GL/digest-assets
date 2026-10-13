@@ -105,7 +105,7 @@ export const playPopFinish = () => {
   }
 }
 
-/** ポップ: 特別メダルの効果音。虹=上昇アルペジオ / ダイヤ=きらめき / クラウン・完成=ファンファーレ */
+/** ポップ: 最終形が 👑/💎/🌈 に進化したときの効果音。虹=上昇アルペジオ / ダイヤ=きらめき / クラウン=ファンファーレ */
 export const playPopSpecial = (kind) => {
   try {
     const seq =

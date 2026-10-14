@@ -691,3 +691,14 @@ body {
 .pop-final-rules li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--panel); }
 .pop-final-rules b { color: var(--accent); }
 .pop-howto-note { margin: 0 0 14px; font-size: 12px; line-height: 1.6; color: var(--muted); text-align: left; }
+
+/* ポップ: モード切替 */
+.pop-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.pop-mode {
+  display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; text-align: left; border-radius: var(--radius);
+  background: var(--panel); border: 2px solid var(--line-soft); color: var(--text); font-family: inherit; cursor: pointer;
+}
+.pop-mode strong { font-size: 14px; }
+.pop-mode span { font-size: 11px; line-height: 1.5; color: var(--muted); }
+.pop-mode b { color: var(--text); font-family: "Noto Sans Devanagari", system-ui, sans-serif; }
+.pop-mode.sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }

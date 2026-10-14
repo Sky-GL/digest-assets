@@ -18,6 +18,12 @@ const DROP_COOLDOWN = 380 // ms
 const OVER_MS = 1600
 const STEP = 1000 / 60
 const FONT = '"Noto Sans Devanagari", "Nirmala UI", "Kohinoor Devanagari", sans-serif'
+// 読みモード: 色と大きさは全員同じにして、文字そのものを見ないと判別できないようにする。
+// 「文字面」(क)と「読み面」(ka)の見分けだけは色で付ける(どの文字かは分からない)。
+const READ_R = 40
+const GLYPH_BASE = '#a5b4c4'
+const READ_BASE = '#6fe0a8'
+const LATIN_FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif'
 const SNAP_GAP = 16 // 最終形は、この距離まで近づけば吸い付いて合体する
 // 最終形が育つときの得点: (最後のレベル+1) × この値。🌈になったときは虹ボーナスも加算
 const TIER_SCORE = [0, 15, 25, 40]
@@ -118,7 +124,8 @@ export const drawMedal = (ctx, x, y, item, { scale = 1, alpha = 1, squash = 0, i
   const aura = isFinal
   const s = item.radius * scale
   const accent = item.base
-  const showLabel = item.radius >= 30 // 小さいメダルではローマ字が潰れるので文字を優先する
+  const showLabel = item.radius >= 30 && !item.hideLabel // 小さいメダル/読みモードではローマ字を添えない
+  const family = item.latin ? LATIN_FONT : FONT
   ctx.save()
   ctx.globalAlpha = alpha
   ctx.translate(x, y)
@@ -172,13 +179,13 @@ export const drawMedal = (ctx, x, y, item, { scale = 1, alpha = 1, squash = 0, i
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   const inner = s - rw
-  let size = inner * (showLabel ? 1.0 : 1.12)
-  ctx.font = `700 ${size}px ${FONT}`
+  let size = inner * (showLabel ? 1.0 : item.latin ? 0.95 : 1.12)
+  ctx.font = `${item.latin ? 800 : 700} ${size}px ${family}`
   const w = ctx.measureText(item.glyph).width
-  const maxW = inner * 1.55
+  const maxW = inner * (item.latin ? 1.45 : 1.55)
   if (w > maxW) {
     size *= maxW / w
-    ctx.font = `700 ${size}px ${FONT}`
+    ctx.font = `${item.latin ? 800 : 700} ${size}px ${family}`
   }
   const gy = showLabel ? -inner * 0.14 : 0
   // 暗い縁取り → 発光 → ほぼ白の文字、の順で重ねて背景から浮かせる
@@ -217,12 +224,15 @@ export class PopEngine {
   /**
    * @param stage  POP_STAGES の1要素(5文字)
    * @param cb     { onScore, onNext, onFirstInteract, onUnlock, onMerge, onTier, onStageClear, onFinish }
+   *   onNext({ level, face }) : 次に降るメダル(face 0=文字面 / 1=読み面)
+   * @param mode   'normal'=同じ文字どうしが合体(元のかなポップ) / 'read'=文字面+読み面のペアが合体(読む練習)
    *   onTier(tier, points)   : 最終形が 👑(1)/💎(2)/🌈(3) に進化した
    *   onStageClear()         : 🌈+🌈 が合体してステージクリア
    *   onFinish(score, grand) : ゲームオーバー(grand=true は全ステージクリア)
    */
-  constructor(stage, cb) {
+  constructor(stage, cb, mode = 'normal') {
     this.cb = cb
+    this.pairMode = mode === 'read'
     this.chars = stage.chars
     this.engine = Engine.create()
     this.engine.gravity.y = 1.1
@@ -241,7 +251,7 @@ export class PopEngine {
     this.rafId = 0
     this.bag = [] // 出す順にシャッフルした文字の袋。空になったら詰め直す
     this.lastSpawn = -1
-    this.nextLevel = this.rollSpawn()
+    this.next = this.rollSpawn()
   }
 
   get maxLevel() {
@@ -249,22 +259,54 @@ export class PopEngine {
   }
 
   /**
-   * 次に降らせる文字を決める。学習のため、ステージの文字を「シャッフルした袋」から1周ずつ出す。
+   * 次に降らせるメダル { level, face } を決める。学習のため、ステージの文字を「シャッフルした袋」から1周ずつ出す。
    * 1周の間に各文字がちょうど1回ずつ出るので偏らない(最終形は合体でしか出ない)。
+   * 読みモードでは各文字が文字面・読み面の2枚ずつ袋に入る(ペアになる相手が必ず降ってくる)。
    */
   rollSpawn() {
     if (this.bag.length === 0) {
-      const bag = Array.from({ length: this.maxLevel }, (_, i) => i)
+      const bag = []
+      for (let lv = 0; lv < this.maxLevel; lv++) {
+        bag.push(lv * 2)
+        if (this.pairMode) bag.push(lv * 2 + 1)
+      }
       for (let i = bag.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1))
         ;[bag[i], bag[j]] = [bag[j], bag[i]]
       }
-      // 袋の継ぎ目で同じ文字が続かないようにする(末尾から取り出す)
+      // 袋の継ぎ目で同じメダルが続かないようにする(末尾から取り出す)
       if (bag.length > 1 && bag[bag.length - 1] === this.lastSpawn) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]]
       this.bag = bag
     }
     this.lastSpawn = this.bag.pop()
-    return this.lastSpawn
+    return { level: this.lastSpawn >> 1, face: this.lastSpawn & 1 }
+  }
+
+  /** メダルの半径。読みモードは全員同じ(大きさで文字が分からないように) */
+  rad(level) {
+    return this.pairMode ? READ_R : this.chars[level].radius
+  }
+
+  /** 描画用のアイテム。読みモードは色を統一し、読み面はローマ字だけを出す */
+  itemFor(level, face) {
+    const c = this.chars[level]
+    if (!this.pairMode) return c
+    return { ...c, radius: READ_R, base: face ? READ_BASE : GLYPH_BASE, glyph: face ? c.label : c.glyph, latin: !!face, hideLabel: true }
+  }
+
+  /**
+   * 合体で生まれるメダルの面を決める。読みモードでは、同じ(level, 段階)の相手が足りない面を出す。
+   * 乱数だと最終形が同じ面ばかり揃って、ペアが作れず行き詰まるため。
+   */
+  pickFace(level, tier) {
+    if (!this.pairMode) return 0
+    const count = [0, 0]
+    for (const b of Composite.allBodies(this.engine.world)) {
+      const m = b.medal
+      if (!b.isStatic && m && !m.merging && m.level === level && m.finalTier === tier) count[m.face] += 1
+    }
+    if (count[0] === count[1]) return Math.random() < 0.5 ? 0 : 1
+    return count[0] < count[1] ? 0 : 1
   }
 
   mount(canvas) {
@@ -289,7 +331,7 @@ export class PopEngine {
     // Canvas描画は未ロードのWebフォントを自動では待たないので、先に読み込みを促しておく
     document.fonts?.load(`700 40px "Noto Sans Devanagari"`, 'अक').catch(() => {})
 
-    this.cb.onNext(this.nextLevel)
+    this.cb.onNext(this.next)
     this.lastFrame = performance.now()
     this.loop(this.lastFrame)
   }
@@ -323,9 +365,9 @@ export class PopEngine {
     this.confettiT = 0
     this.bag = []
     this.lastSpawn = -1
-    this.nextLevel = this.rollSpawn()
+    this.next = this.rollSpawn()
     this.cb.onScore(0)
-    this.cb.onNext(this.nextLevel)
+    this.cb.onNext(this.next)
   }
 
   // ---- 入力 ----
@@ -342,7 +384,7 @@ export class PopEngine {
   }
 
   clampAim(x) {
-    const r = this.chars[this.nextLevel].radius
+    const r = this.rad(this.next.level)
     return Math.max(r + 6, Math.min(W - r - 6, x))
   }
 
@@ -374,16 +416,15 @@ export class PopEngine {
   }
 
   // ---- 物理 ----
-  makeBall(x, y, level, finalTier = 0) {
-    const c = this.chars[level]
-    const b = Bodies.circle(x, y, c.radius, {
+  makeBall(x, y, level, finalTier = 0, face = 0) {
+    const b = Bodies.circle(x, y, this.rad(level), {
       restitution: 0.16,
       friction: 0.55,
       frictionStatic: 0.7,
       density: 0.0011,
       slop: 0.02,
     })
-    b.medal = { level, finalTier, born: performance.now(), pop: 0, merging: false }
+    b.medal = { level, finalTier, face, born: performance.now(), pop: 0, merging: false }
     return b
   }
 
@@ -392,12 +433,12 @@ export class PopEngine {
     const now = performance.now()
     if (now - this.lastDrop < DROP_COOLDOWN) return
     this.lastDrop = now
-    const lv = this.nextLevel
-    Composite.add(this.engine.world, this.makeBall(this.aimX, SPAWN_Y, lv))
+    const { level: lv, face } = this.next
+    Composite.add(this.engine.world, this.makeBall(this.aimX, SPAWN_Y, lv, 0, face))
     playPopDrop()
     speakText(this.chars[lv].speak, { rate: 0.85, pitch: 1.2 })
-    this.nextLevel = this.rollSpawn()
-    this.cb.onNext(this.nextLevel)
+    this.next = this.rollSpawn()
+    this.cb.onNext(this.next)
   }
 
   onCollide = (ev) => {
@@ -414,6 +455,8 @@ export class PopEngine {
     const ja = a.medal
     const jb = b.medal
     if (!ja || !jb || ja.merging || jb.merging || ja.level !== jb.level) return false
+    // 読みモードは「文字面 + 読み面」のペアだけが合体する(同じ面どうしは合体しない)
+    if (this.pairMode && ja.face === jb.face) return false
 
     if (ja.level >= this.maxLevel) {
       if (ja.level !== this.maxLevel || this.stageClearing || ja.finalTier !== jb.finalTier) return false
@@ -438,7 +481,8 @@ export class PopEngine {
       for (let j = i + 1; j < bodies.length; j++) {
         const mb = bodies[j].medal
         if (mb.merging || ma.level !== mb.level || ma.finalTier !== mb.finalTier) continue
-        const touch = this.chars[ma.level].radius + this.chars[mb.level].radius
+        if (this.pairMode && ma.face === mb.face) continue
+        const touch = this.rad(ma.level) + this.rad(mb.level)
         const limit = ma.level === this.maxLevel ? touch + SNAP_GAP : touch
         const dx = bodies[i].position.x - bodies[j].position.x
         const dy = bodies[i].position.y - bodies[j].position.y
@@ -454,7 +498,7 @@ export class PopEngine {
     Composite.remove(this.engine.world, b)
 
     const isMax = level >= this.maxLevel
-    const ball = this.makeBall(x, y, level)
+    const ball = this.makeBall(x, y, level, 0, this.pickFace(level, 0))
     ball.medal.pop = 1
     Composite.add(this.engine.world, ball)
 
@@ -474,7 +518,7 @@ export class PopEngine {
     const y = (a.position.y + b.position.y) / 2
     Composite.remove(this.engine.world, a)
     Composite.remove(this.engine.world, b)
-    const ball = this.makeBall(x, y, this.maxLevel, tier)
+    const ball = this.makeBall(x, y, this.maxLevel, tier, this.pickFace(this.maxLevel, tier))
     ball.medal.pop = 1
     Composite.add(this.engine.world, ball)
 
@@ -517,7 +561,7 @@ export class PopEngine {
       if (b.isStatic || !b.medal) continue
       const j = b.medal
       j.pop = Math.max(0, j.pop - dt * 3.2)
-      if (now - j.born > 900 && b.position.y - this.chars[j.level].radius < LINE_Y) over = true
+      if (now - j.born > 900 && b.position.y - this.rad(j.level) < LINE_Y) over = true
     }
     this.overTime = over && !this.stageClearing ? this.overTime + dt * 1000 : 0
     if (!this.finished && this.overTime > OVER_MS) this.finish()
@@ -610,7 +654,7 @@ export class PopEngine {
 
     // 次に落とすメダルと狙い線
     if (!this.finished && !this.stageClearing) {
-      const next = this.chars[this.nextLevel]
+      const next = this.itemFor(this.next.level, this.next.face)
       ctx.save()
       ctx.setLineDash([4, 10])
       ctx.strokeStyle = 'rgba(90, 210, 255, 0.75)'
@@ -630,7 +674,7 @@ export class PopEngine {
     for (const b of bodies) {
       const m = b.medal
       const pop = popCurve(m.pop)
-      drawMedal(ctx, b.position.x, b.position.y, this.chars[m.level], {
+      drawMedal(ctx, b.position.x, b.position.y, this.itemFor(m.level, m.face), {
         scale: 1 + 0.2 * pop,
         squash: -0.05 * pop,
         isFinal: m.level === this.maxLevel,

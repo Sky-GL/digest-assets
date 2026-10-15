@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PopEngine } from '../lib/popEngine'
 import { POP_STAGES, popStage, shade, withAlpha } from '../data/popStages'
-import { loadPop, savePop, addExp, expToNext, recordBest, markCleared } from '../lib/popStore'
+import { loadPop, savePop, addExp, expToNext, recordBest, markCleared, recordKey } from '../lib/popStore'
 import { hasHindiVoice, speakText } from '../lib/speech'
 import { unlockAudio } from '../lib/sfx'
 import { FINAL_TIERS, FINALS_TO_CLEAR } from '../lib/popFinal'
 
 // DOM側の小さなメダル(進化の並び・結果表示・ステージ選択で使う)。描画はCanvas側(drawMedal)と揃える
-function Bubble({ item, size = 40, active = false, dim = false }) {
+function Bubble({ item, size = 40, active = false, dim = false, hideLabel = false }) {
   const long = [...item.glyph].length > 2
-  const showLabel = size >= 36
+  const showLabel = size >= 36 && !hideLabel
   return (
     <span
       className={`pop-bubble ${active ? 'active' : ''} ${dim ? 'dim' : ''}`}
@@ -29,15 +29,25 @@ function Bubble({ item, size = 40, active = false, dim = false }) {
   )
 }
 
-function HowTo({ onClose }) {
+function HowTo({ mode, onClose }) {
   return (
     <div className="pop-overlay" onClick={onClose}>
       <div className="pop-card" onClick={(e) => e.stopPropagation()}>
         <h2>あそびかた</h2>
         <ol className="pop-howto">
           <li>画面をタップ／ドラッグして位置を決め、指を離すと文字メダルが落ちます。</li>
-          <li>同じ文字どうしがぶつかると合体して、次の文字に進化します。</li>
-          <li>ステージの5文字がまんべんなく降ってきます。落とす・合体するたびにヒンディー語で読み上げるので、音と形をセットで覚えましょう。</li>
+          {mode === 'read' ? (
+            <>
+              <li>メダルには<b>文字面</b>(क)と<b>読み面</b>(ka)があります。<b>同じ文字の「文字面 + 読み面」</b>がぶつかると合体して、次の文字に進化します。</li>
+              <li>色も大きさも全部同じです。<b>文字を読んで</b>、対応する相手の隣に落としましょう。同じ面どうしは合体しません。</li>
+              <li>落とす・合体するたびにヒンディー語で読み上げるので、合っていたか耳でも確認できます。</li>
+            </>
+          ) : (
+            <>
+              <li>同じ文字どうしがぶつかると合体して、次の文字に進化します。</li>
+              <li>ステージの5文字がまんべんなく降ってきます。落とす・合体するたびにヒンディー語で読み上げるので、音と形をセットで覚えましょう。</li>
+            </>
+          )}
           <li>点線より上に積み上がるとゲームオーバーです。</li>
         </ol>
         <p className="pop-howto-sub">ステージクリアのルール(最終形を育てる)</p>
@@ -48,7 +58,7 @@ function HowTo({ onClose }) {
           <li><span>🌈 + 🌈</span><b>→ 次のステージへ!</b></li>
         </ul>
         <p className="pop-howto-note">
-          同じバッジどうしだけが合体します。最終形は近づくと吸い付き、自動では消えません。🌈ができると虹ボーナス+300点。
+          同じバッジどうしだけが合体します{mode === 'read' ? '(読みモードでは文字面と読み面のペア)' : ''}。最終形は近づくと吸い付き、自動では消えません。🌈ができると虹ボーナス+300点。
           クリアには最終形が{FINALS_TO_CLEAR}個必要です。
         </p>
         <button className="btn primary" onClick={onClose}>わかった!</button>
@@ -64,7 +74,7 @@ export default function PopGame({ onBack }) {
   const [phase, setPhase] = useState('title') // 'title' | 'play'
   const [help, setHelp] = useState(false)
   const [score, setScore] = useState(0)
-  const [nextLevel, setNextLevel] = useState(0)
+  const [next, setNext] = useState({ level: 0, face: 0 }) // 次に降るメダル
   const [tier, setTier] = useState(0) // このステージで最終形が育った最高の段階(0=最終形/1=👑/2=💎/3=🌈)
   const [unlocked, setUnlocked] = useState(0) // このプレイで到達した最大レベル
   const [over, setOver] = useState(null) // { score, grand }
@@ -76,6 +86,8 @@ export default function PopGame({ onBack }) {
   const toastTimer = useRef(null)
   const advanceTimer = useRef(null)
   const stage = popStage(stageId)
+  const mode = save.mode
+  const nextLevel = next.level
 
   const commit = useCallback((next) => {
     saveRef.current = next
@@ -97,9 +109,11 @@ export default function PopGame({ onBack }) {
   // プレイ画面に入ったらエンジンを起動、離れたら破棄
   useEffect(() => {
     if (phase !== 'play' || !canvasRef.current) return undefined
+    const gameMode = saveRef.current.mode
+    const key = recordKey(gameMode, stageId)
     const engine = new PopEngine(stage, {
       onScore: setScore,
-      onNext: setNextLevel,
+      onNext: setNext,
       onFirstInteract: () => setHint(false),
       onUnlock: (lv) => setUnlocked((u) => Math.max(u, lv)),
       onMerge: (lv) => {
@@ -123,7 +137,7 @@ export default function PopGame({ onBack }) {
       },
       // 🌈+🌈 が合体してステージクリア。次のステージがあれば自動で進む
       onStageClear: () => {
-        commit(markCleared(saveRef.current, stageId))
+        commit(markCleared(saveRef.current, key))
         if (stageId < POP_STAGES.length) {
           const nextStage = popStage(stageId + 1)
           showToast({ kind: 'clear', text: `🎉 STAGE ${stageId} クリア!`, sub: `次は STAGE ${stageId + 1}「${nextStage.title}」` }, 1800)
@@ -137,10 +151,10 @@ export default function PopGame({ onBack }) {
         }
       },
       onFinish: (s, grand) => {
-        commit(recordBest(saveRef.current, stageId, s))
+        commit(recordBest(saveRef.current, key, s))
         setOver({ score: s, grand: !!grand })
       },
-    })
+    }, gameMode)
     engine.mount(canvasRef.current)
     engineRef.current = engine
     return () => {
@@ -200,7 +214,20 @@ export default function PopGame({ onBack }) {
           <p className="pop-tag">MERGE · EVOLVE · MASTER DEVANAGARI</p>
           <div className="pop-pills">
             <span className="pop-pill">Lv <strong>{save.level}</strong></span>
-            {save.best[stageId] > 0 && <span className="pop-pill">👑 <strong>{save.best[stageId]}</strong></span>}
+            {save.best[recordKey(mode, stageId)] > 0 && (
+              <span className="pop-pill">👑 <strong>{save.best[recordKey(mode, stageId)]}</strong></span>
+            )}
+          </div>
+
+          <div className="pop-modes">
+            <button className={`pop-mode ${mode === 'read' ? 'sel' : ''}`} onClick={() => commit({ ...saveRef.current, mode: 'read' })}>
+              <strong>📖 読みモード</strong>
+              <span>文字 <b>क</b> と読み <b>ka</b> のペアで合体。色も大きさも同じなので、文字を読まないと進めません</span>
+            </button>
+            <button className={`pop-mode ${mode === 'normal' ? 'sel' : ''}`} onClick={() => commit({ ...saveRef.current, mode: 'normal' })}>
+              <strong>🫧 ふつう</strong>
+              <span>同じ文字どうしが合体(元のかなポップと同じ)</span>
+            </button>
           </div>
 
           <div className="pop-stages">
@@ -211,7 +238,7 @@ export default function PopGame({ onBack }) {
                 onClick={() => setStageId(s.id)}
               >
                 <Bubble item={s.chars[0]} size={44} />
-                <span className="pop-stage-no">STAGE {s.id}{save.cleared[s.id] ? ' ★' : ''}</span>
+                <span className="pop-stage-no">STAGE {s.id}{save.cleared[recordKey(mode, s.id)] ? ' ★' : ''}</span>
                 <strong>{s.title}</strong>
                 <span className="pop-stage-sub">{s.subtitle}</span>
               </button>
@@ -226,7 +253,7 @@ export default function PopGame({ onBack }) {
             </p>
           )}
         </div>
-        {help && <HowTo onClose={() => setHelp(false)} />}
+        {help && <HowTo mode={mode} onClose={() => setHelp(false)} />}
       </div>
     )
   }
@@ -245,7 +272,8 @@ export default function PopGame({ onBack }) {
       <div className="pop-chain">
         {stage.chars.map((c, i) => (
           <span key={c.glyph} className="pop-chain-item">
-            <Bubble item={c} size={42} active={i === nextLevel} dim={i > unlocked} />
+            {/* 読みモードでは、まだ出ていない文字のローマ字は隠す(進化バーが答えの一覧にならないように) */}
+            <Bubble item={c} size={42} active={i === nextLevel} dim={i > unlocked} hideLabel={mode === 'read' && i > unlocked} />
             <span className="pop-arrow">▸</span>
           </span>
         ))}
@@ -266,7 +294,7 @@ export default function PopGame({ onBack }) {
         <span className="pop-pill sm">Lv <strong>{save.level}</strong></span>
         <div className="pop-exp"><div style={{ width: `${Math.min(100, (save.exp / need) * 100)}%` }} /></div>
         <span className="pop-pill sm">⭐ <strong>{score}</strong></span>
-        <span className="pop-pill sm">👑 <strong>{Math.max(save.best[stageId] || 0, 0)}</strong></span>
+        <span className="pop-pill sm">👑 <strong>{Math.max(save.best[recordKey(mode, stageId)] || 0, 0)}</strong></span>
       </div>
 
       <div className="pop-field">
@@ -289,7 +317,7 @@ export default function PopGame({ onBack }) {
               <div className="pop-score">
                 <span>SCORE</span>
                 <strong>{over.score}</strong>
-                <small>BEST {Math.max(save.best[stageId] || 0, over.score)}</small>
+                <small>BEST {Math.max(save.best[recordKey(mode, stageId)] || 0, over.score)}</small>
               </div>
               <p className="pop-learned">今回出会った文字</p>
               <div className="pop-learned-row">
@@ -307,11 +335,16 @@ export default function PopGame({ onBack }) {
       </div>
 
       <div className="pop-listen">
-        <button className="btn" onClick={listen}>
-          🔊 <span className="pop-listen-glyph">{cur.glyph}</span> <small>{cur.label}</small>
-        </button>
+        {mode === 'read' ? (
+          // 読みモードでは文字・ローマ字を出さない(答えになるため)。聞きたいときだけ発音を鳴らす
+          <button className="btn" onClick={listen}>🔊 次のメダルの発音を聞く</button>
+        ) : (
+          <button className="btn" onClick={listen}>
+            🔊 <span className="pop-listen-glyph">{cur.glyph}</span> <small>{cur.label}</small>
+          </button>
+        )}
       </div>
-      {help && <HowTo onClose={() => setHelp(false)} />}
+      {help && <HowTo mode={mode} onClose={() => setHelp(false)} />}
     </div>
   )
 }

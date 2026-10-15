@@ -1,7 +1,11 @@
 // ポップ専用の進捗(本編の進捗とは独立)。Lvは遊んだ量の目安(出現する文字には影響しない)。
 const KEY = 'devanagari-pop-v1'
 
-const empty = () => ({ level: 1, exp: 0, best: {}, cleared: {} })
+// mode: 'read'=文字面+読み面のペアで合体(読む練習) / 'normal'=同じ文字どうしが合体(元のかなポップ)
+const empty = () => ({ level: 1, exp: 0, best: {}, cleared: {}, mode: 'read' })
+
+/** ベスト/クリア記録のキー。モードごとに別々に持つ(読みモードは 'r1','r2'… / ふつうは 1,2…) */
+export const recordKey = (mode, stage) => (mode === 'read' ? `r${stage}` : stage)
 
 export const loadPop = () => {
   try {

@@ -20,10 +20,13 @@ const STEP = 1000 / 60
 const FONT = '"Noto Sans Devanagari", "Nirmala UI", "Kohinoor Devanagari", sans-serif'
 // 読みモード: 色と大きさは全員同じにして、文字そのものを見ないと判別できないようにする。
 // 「文字面」(क)と「読み面」(ka)の見分けだけは色で付ける(どの文字かは分からない)。
-const READ_R = 40
+const READ_R = 32 // 盤面が詰まりやすいので小さめ(40だとボットでも0/6でクリアできなかった)
 const GLYPH_BASE = '#a5b4c4'
 const READ_BASE = '#6fe0a8'
 const LATIN_FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif'
+// 読みモードの最終形は、同じ段階どうしを弱く引き寄せる(質量あたりの加速度 = FINAL_ATTRACT*0.001)。
+// 最終形は消えず動かせないので、離れて詰まるとペアが出会えずクリアできなくなるため。
+const FINAL_ATTRACT = 0.6
 const SNAP_GAP = 16 // 最終形は、この距離まで近づけば吸い付いて合体する
 // 最終形が育つときの得点: (最後のレベル+1) × この値。🌈になったときは虹ボーナスも加算
 const TIER_SCORE = [0, 15, 25, 40]
@@ -300,6 +303,7 @@ export class PopEngine {
    */
   pickFace(level, tier) {
     if (!this.pairMode) return 0
+    if (level >= this.maxLevel) return 0 // 最終形は常に文字面(面を問わず合体するので)
     const count = [0, 0]
     for (const b of Composite.allBodies(this.engine.world)) {
       const m = b.medal
@@ -455,8 +459,9 @@ export class PopEngine {
     const ja = a.medal
     const jb = b.medal
     if (!ja || !jb || ja.merging || jb.merging || ja.level !== jb.level) return false
-    // 読みモードは「文字面 + 読み面」のペアだけが合体する(同じ面どうしは合体しない)
-    if (this.pairMode && ja.face === jb.face) return false
+    // 読みモードは「文字面 + 読み面」のペアだけが合体する(同じ面どうしは合体しない)。
+    // ただし最終形(完成した文字)どうしは面を問わず、同じバッジなら合体する
+    if (this.pairMode && ja.level < this.maxLevel && ja.face === jb.face) return false
 
     if (ja.level >= this.maxLevel) {
       if (ja.level !== this.maxLevel || this.stageClearing || ja.finalTier !== jb.finalTier) return false
@@ -472,6 +477,25 @@ export class PopEngine {
     return true
   }
 
+  /** 同じ段階の最終形どうしを弱く引き寄せる(離れて詰まった最終形が出会えるように) */
+  attractFinals() {
+    const fin = Composite.allBodies(this.engine.world).filter((b) => !b.isStatic && b.medal && b.medal.level === this.maxLevel && !b.medal.merging)
+    for (let i = 0; i < fin.length; i++) {
+      for (let j = i + 1; j < fin.length; j++) {
+        const a = fin[i]
+        const b = fin[j]
+        if (a.medal.finalTier !== b.medal.finalTier) continue
+        const dx = b.position.x - a.position.x
+        const dy = b.position.y - a.position.y
+        const d = Math.hypot(dx, dy)
+        if (d < 1 || d > 260) continue
+        const f = FINAL_ATTRACT * 0.001 // 質量あたりの加速度(重力は 1.1*0.001)
+        Matter.Body.applyForce(a, a.position, { x: (dx / d) * f * a.mass, y: (dy / d) * f * a.mass })
+        Matter.Body.applyForce(b, b.position, { x: (-dx / d) * f * b.mass, y: (-dy / d) * f * b.mass })
+      }
+    }
+  }
+
   /** 衝突イベントを取りこぼした分や、最終形どうしが少し離れているときに、近ければ合体させる */
   snapMerge() {
     const bodies = Composite.allBodies(this.engine.world).filter((b) => !b.isStatic && b.medal)
@@ -481,7 +505,7 @@ export class PopEngine {
       for (let j = i + 1; j < bodies.length; j++) {
         const mb = bodies[j].medal
         if (mb.merging || ma.level !== mb.level || ma.finalTier !== mb.finalTier) continue
-        if (this.pairMode && ma.face === mb.face) continue
+        if (this.pairMode && ma.level < this.maxLevel && ma.face === mb.face) continue
         const touch = this.rad(ma.level) + this.rad(mb.level)
         const limit = ma.level === this.maxLevel ? touch + SNAP_GAP : touch
         const dx = bodies[i].position.x - bodies[j].position.x
@@ -548,6 +572,7 @@ export class PopEngine {
   step(dt) {
     this.accumulator = Math.min(this.accumulator + dt * 1000, STEP * 5)
     while (this.accumulator >= STEP) {
+      if (this.pairMode) this.attractFinals()
       Engine.update(this.engine, STEP)
       this.snapMerge()
       this.accumulator -= STEP

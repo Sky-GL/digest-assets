@@ -58,7 +58,7 @@ function HowTo({ mode, onClose }) {
           <li><span>🌈 + 🌈</span><b>→ 次のステージへ!</b></li>
         </ul>
         <p className="pop-howto-note">
-          同じバッジどうしだけが合体します{mode === 'read' ? '(読みモードでは文字面と読み面のペア)' : ''}。最終形は近づくと吸い付き、自動では消えません。🌈ができると虹ボーナス+300点。
+          同じバッジどうしだけが合体します{mode === 'read' ? '(読みモードでも、完成した最終形は文字面・読み面を問いません。同じバッジの最終形は引き寄せ合います)' : ''}。最終形は近づくと吸い付き、自動では消えません。🌈ができると虹ボーナス+300点。
           クリアには最終形が{FINALS_TO_CLEAR}個必要です。
         </p>
         <button className="btn primary" onClick={onClose}>わかった!</button>

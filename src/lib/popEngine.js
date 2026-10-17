@@ -271,7 +271,8 @@ export class PopEngine {
 
   /**
    * 次に降らせるメダル { level, face } を決める。学習のため、ステージの文字を「シャッフルした袋」から1周ずつ出す。
-   * 1周の間に各文字がちょうど1回ずつ出るので偏らない(最終形は合体でしか出ない)。
+   * 1周の間に各文字がちょうど1回ずつ出るので偏らない。最終形(行の最後の文字)も学習のため文字面で1周に1回降る
+   * (合体でしか出ないと、その文字を見る機会が少なくなるため)。
    * 読みモードでは各文字が文字面・読み面の2枚ずつ袋に入る(ペアになる相手が必ず降ってくる)。
    */
   rollSpawn() {
@@ -281,6 +282,7 @@ export class PopEngine {
         bag.push(lv * 2)
         if (this.pairMode) bag.push(lv * 2 + 1)
       }
+      bag.push(this.maxLevel * 2) // 最終形は文字面のみ(面を問わず合体するので相手探しは不要)
       for (let i = bag.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1))
         ;[bag[i], bag[j]] = [bag[j], bag[i]]

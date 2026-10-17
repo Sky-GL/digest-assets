@@ -2,7 +2,7 @@
 const KEY = 'devanagari-pop-v1'
 
 // mode: 'read'=文字面+読み面のペアで合体(読む練習) / 'normal'=同じ文字どうしが合体(元のかなポップ)
-const empty = () => ({ level: 1, exp: 0, best: {}, cleared: {}, mode: 'read' })
+const empty = () => ({ level: 1, exp: 0, best: {}, bestCombo: {}, cleared: {}, mode: 'read' })
 
 /** ベスト/クリア記録のキー。モードごとに別々に持つ(読みモードは 'r1','r2'… / ふつうは 1,2…) */
 export const recordKey = (mode, stage) => (mode === 'read' ? `r${stage}` : stage)
@@ -46,3 +46,10 @@ export const recordBest = (p, stage, score) =>
   score > (p.best[stage] || 0) ? { ...p, best: { ...p.best, [stage]: score } } : p
 
 export const markCleared = (p, stage) => (p.cleared[stage] ? p : { ...p, cleared: { ...p.cleared, [stage]: true } })
+
+/** 最大コンボの自己ベスト(モードごと)。{ next, isNew } を返す(保存は呼び出し側) */
+export const recordCombo = (p, key, combo) => {
+  const prev = (p.bestCombo && p.bestCombo[key]) || 0
+  if (combo <= prev) return { next: p, isNew: false }
+  return { next: { ...p, bestCombo: { ...(p.bestCombo || {}), [key]: combo } }, isNew: prev > 0 || combo >= 3 }
+}

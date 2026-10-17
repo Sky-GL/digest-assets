@@ -1,6 +1,7 @@
 import Matter from 'matter-js'
 import { shade, withAlpha } from '../data/popStages'
-import { playPopDrop, playPopMerge, playPopFinish, playPopSpecial, unlockAudio } from './sfx'
+import { playPopDrop, playPopMergeCombo, playPopComboUp, playPopMiss, playPopFinish, playPopSpecial, unlockAudio } from './sfx'
+import { Fx, comboMult, MULT_COLORS, buzz } from './popFx'
 import { FINAL_TIERS, drawFinalDecor } from './popFinal'
 import { primeSpeech, speakText } from './speech'
 
@@ -27,6 +28,8 @@ const LATIN_FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", s
 // 読みモードの最終形は、同じ段階どうしを弱く引き寄せる(質量あたりの加速度 = FINAL_ATTRACT*0.001)。
 // 最終形は消えず動かせないので、離れて詰まるとペアが出会えずクリアできなくなるため。
 const FINAL_ATTRACT = 0.6
+// ふつうモードのコンボは、この時間内に次の合体が起きないと途切れる(読みモードは時間では途切れない=考える時間を奪わない)
+const COMBO_WINDOW = 6000
 const SNAP_GAP = 16 // 最終形は、この距離まで近づけば吸い付いて合体する
 // 最終形が育つときの得点: (最後のレベル+1) × この値。🌈になったときは虹ボーナスも加算
 const TIER_SCORE = [0, 15, 25, 40]
@@ -254,6 +257,11 @@ export class PopEngine {
     this.rafId = 0
     this.bag = [] // 出す順にシャッフルした文字の袋。空になったら詰め直す
     this.lastSpawn = -1
+    this.fx = new Fx()
+    this.combo = 0
+    this.maxCombo = 0
+    this.misses = 0
+    this.lastMergeAt = 0
     this.next = this.rollSpawn()
   }
 
@@ -369,9 +377,14 @@ export class PopEngine {
     this.confettiT = 0
     this.bag = []
     this.lastSpawn = -1
+    this.fx.clear()
+    this.combo = 0
+    this.maxCombo = 0
+    this.misses = 0
     this.next = this.rollSpawn()
     this.cb.onScore(0)
     this.cb.onNext(this.next)
+    this.cb.onCombo?.(0, 1)
   }
 
   // ---- 入力 ----
@@ -438,7 +451,9 @@ export class PopEngine {
     if (now - this.lastDrop < DROP_COOLDOWN) return
     this.lastDrop = now
     const { level: lv, face } = this.next
-    Composite.add(this.engine.world, this.makeBall(this.aimX, SPAWN_Y, lv, 0, face))
+    const ball = this.makeBall(this.aimX, SPAWN_Y, lv, 0, face)
+    ball.medal.fresh = true // 最初に何かに触れるまでは「落としたて」(読み間違いの判定に使う)
+    Composite.add(this.engine.world, ball)
     playPopDrop()
     speakText(this.chars[lv].speak, { rate: 0.85, pitch: 1.2 })
     this.next = this.rollSpawn()
@@ -446,7 +461,75 @@ export class PopEngine {
   }
 
   onCollide = (ev) => {
-    for (const pair of ev.pairs) this.tryMergePair(pair.bodyA, pair.bodyB)
+    for (const pair of ev.pairs) {
+      this.judgeContact(pair.bodyA, pair.bodyB)
+      this.tryMergePair(pair.bodyA, pair.bodyB)
+    }
+  }
+
+  /**
+   * 読み間違いの判定(読みモードのみ)。落としたメダルが「最初に触れた相手」だけを見る:
+   *  - 反対の面で、別の文字 → 読み間違い(本当の相手が盤面にいるときだけ)
+   *  - 同じ文字の反対の面 → 正解のペア(合体する) / 同じ面・壁・床・最終形 → 判定しない
+   * 山の中で偶然触れただけで罰しないよう、本当の相手がいない場合や、最初の接触以外は見ない。
+   */
+  judgeContact(a, b) {
+    for (const [x, y] of [[a, b], [b, a]]) {
+      const m = x.medal
+      if (!m || !m.fresh) continue
+      m.fresh = false
+      if (!this.pairMode || m.merging || y.isStatic || !y.medal || y.medal.merging) continue
+      const o = y.medal
+      if (o.level >= this.maxLevel || o.face === m.face || o.level === m.level) continue
+      if (!this.mateExists(x)) continue
+      this.registerMiss(x, y)
+    }
+  }
+
+  mateExists(body) {
+    const m = body.medal
+    return Composite.allBodies(this.engine.world).some(
+      (b) => b !== body && !b.isStatic && b.medal && !b.medal.merging && b.medal.finalTier === 0 && b.medal.level === m.level && b.medal.face !== m.face,
+    )
+  }
+
+  registerMiss(dropped, other) {
+    const hadCombo = this.combo
+    this.misses += 1
+    this.breakCombo()
+    this.fx.popup(dropped.position.x, dropped.position.y - this.rad(dropped.medal.level) - 6, '✗', '#ff6b6b', 26)
+    this.fx.shake(2)
+    playPopMiss()
+    this.cb.onMiss?.({
+      hadCombo,
+      dropped: { level: dropped.medal.level, face: dropped.medal.face },
+      other: { level: other.medal.level, face: other.medal.face },
+    })
+  }
+
+  /** コンボを1つ進めて、現在の倍率を返す。倍率が上がった瞬間は音と光で知らせる */
+  bumpCombo() {
+    const now = performance.now()
+    if (!this.pairMode && this.combo > 0 && now - this.lastMergeAt > COMBO_WINDOW) this.combo = 0
+    const before = comboMult(this.combo)
+    this.combo += 1
+    this.lastMergeAt = now
+    this.maxCombo = Math.max(this.maxCombo, this.combo)
+    const mult = comboMult(this.combo)
+    this.cb.onCombo?.(this.combo, mult)
+    if (mult > before) {
+      playPopComboUp(mult)
+      this.fx.flash(0.16 + mult * 0.03, MULT_COLORS[mult])
+      this.fx.popup(W / 2, H * 0.36, `COMBO ×${mult}!`, MULT_COLORS[mult], 30)
+      buzz([10, 25, 14])
+    }
+    return mult
+  }
+
+  breakCombo() {
+    if (this.combo === 0) return
+    this.combo = 0
+    this.cb.onCombo?.(0, 1)
   }
 
   /**
@@ -526,11 +609,17 @@ export class PopEngine {
     ball.medal.pop = 1
     Composite.add(this.engine.world, ball)
 
-    playPopMerge(level, isMax)
+    const mult = this.bumpCombo()
+    const points = (level + 1) * 10 * mult
+    playPopMergeCombo(level, isMax, this.combo)
     speakText(this.chars[level].speak, { rate: 0.8, pitch: isMax ? 1.6 : 1.3 })
-    burst(this.particles, x, y, isMax ? 1.6 : 1)
+    burst(this.particles, x, y, (isMax ? 1.6 : 1) + mult * 0.12, mult > 1 ? [MULT_COLORS[mult], '#ffffff', ...SPARK_COLORS] : undefined)
+    this.fx.wave(x, y, this.rad(level) * 2.4, MULT_COLORS[mult])
+    this.fx.popup(x, y - this.rad(level), mult > 1 ? `+${points} ×${mult}` : `+${points}`, MULT_COLORS[mult], 17 + mult * 2)
+    this.fx.shake(1.2 + mult * 0.9 + (isMax ? 2.5 : 0))
+    buzz(8)
 
-    this.score += (level + 1) * 10
+    this.score += points
     this.cb.onScore(this.score)
     this.cb.onUnlock(level)
     this.cb.onMerge(level)
@@ -549,7 +638,13 @@ export class PopEngine {
     const points = (this.maxLevel + 1) * TIER_SCORE[tier] + (tier === 3 ? RAINBOW_BONUS : 0)
     this.score += points
     this.cb.onScore(this.score)
+    this.bumpCombo()
     burst(this.particles, x, y, 1.6 + tier * 0.6, FINAL_TIERS[tier].burst)
+    this.fx.wave(x, y, 150, FINAL_TIERS[tier].color)
+    this.fx.popup(x, y - 70, `+${points}`, FINAL_TIERS[tier].color, 24)
+    this.fx.shake(4 + tier * 2)
+    this.fx.flash(0.2 + tier * 0.1, FINAL_TIERS[tier].color)
+    buzz([15, 30, 25])
     playPopSpecial(tier === 1 ? 'crown' : tier === 2 ? 'diamond' : 'rainbow')
     speakText(this.chars[this.maxLevel].speak, { rate: 0.8, pitch: 1.6 })
     this.cb.onTier(tier, points)
@@ -565,6 +660,10 @@ export class PopEngine {
     Composite.remove(this.engine.world, b)
     for (let i = 0; i < 3; i++) burst(this.particles, x + (i - 1) * 40, y, 2.6, FINAL_TIERS[3].burst)
     playPopFinish()
+    this.fx.shake(10)
+    this.fx.flash(0.5, '#ffffff')
+    this.fx.wave(x, y, 220, FINAL_TIERS[3].color)
+    buzz([20, 40, 20, 40, 60])
     speakText(this.chars[this.maxLevel].speak, { rate: 0.8, pitch: 1.6 })
     this.cb.onStageClear()
   }
@@ -578,9 +677,11 @@ export class PopEngine {
       this.accumulator -= STEP
     }
     stepParticles(this.particles, dt)
+    this.fx.step(dt)
 
     // ラインを超えたまま一定時間たまっていたら終了(落としたてのメダルは猶予)
     const now = performance.now()
+    if (!this.pairMode && this.combo > 0 && now - this.lastMergeAt > COMBO_WINDOW) this.breakCombo()
     let over = false
     for (const b of Composite.allBodies(this.engine.world)) {
       if (b.isStatic || !b.medal) continue
@@ -602,7 +703,7 @@ export class PopEngine {
     }
     playPopFinish()
     for (let i = 0; i < 4; i++) burst(this.particles, W * (0.2 + 0.2 * i), H * 0.4, 1.4)
-    this.cb.onFinish(this.score, grand)
+    this.cb.onFinish(this.score, grand, { maxCombo: this.maxCombo, misses: this.misses })
   }
 
   loop = (t) => {
@@ -611,6 +712,7 @@ export class PopEngine {
     this.lastFrame = t
     if (this.finished) {
       stepParticles(this.particles, dt)
+      this.fx.step(dt)
       this.confettiT += dt
       if (this.confettiT > 0.55) {
         this.confettiT = 0
@@ -626,6 +728,7 @@ export class PopEngine {
   render(t) {
     const ctx = this.ctx
     ctx.clearRect(0, 0, W, H)
+    this.fx.beginShake(ctx)
 
     // フィールド(暗いパネル+うっすらグリッド)
     ctx.save()
@@ -650,8 +753,14 @@ export class PopEngine {
       ctx.stroke()
     }
     ctx.restore()
-    ctx.lineWidth = 2
-    ctx.strokeStyle = 'rgba(140, 170, 210, 0.35)'
+    // コンボ中は盤面の枠が倍率の色で光る
+    const mult = comboMult(this.combo)
+    ctx.lineWidth = mult > 1 ? 3 : 2
+    ctx.strokeStyle = mult > 1 ? MULT_COLORS[mult] : 'rgba(140, 170, 210, 0.35)'
+    if (mult > 1) {
+      ctx.shadowColor = MULT_COLORS[mult]
+      ctx.shadowBlur = 8 + mult * 4 + Math.sin(t / 160) * 3
+    }
     roundRect(ctx, 6, 30, W - 12, H - 36, 22)
     ctx.stroke()
     ctx.restore()
@@ -709,5 +818,9 @@ export class PopEngine {
     }
 
     drawParticles(ctx, this.particles)
+    this.fx.drawWaves(ctx)
+    this.fx.drawPopups(ctx)
+    this.fx.endShake(ctx)
+    this.fx.drawFlash(ctx, W, H)
   }
 }

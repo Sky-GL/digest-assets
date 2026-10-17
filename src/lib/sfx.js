@@ -117,3 +117,39 @@ export const playPopSpecial = (kind) => {
     /* noop */
   }
 }
+
+/** ポップ: 合体音のコンボ版。コンボが続くほど音が高くなる */
+export const playPopMergeCombo = (level, big, combo) => {
+  try {
+    const f = 520 * Math.pow(1.06, level) * (1 + Math.min(combo, 12) * 0.035)
+    tone(f, 0, 0.16, { peak: 0.07 })
+    tone(f * 1.5, 0.05, 0.18, { peak: 0.055 })
+    tone(f * 2, 0.1, 0.22, { peak: 0.04 })
+    if (big) {
+      tone(f * 2.5, 0.2, 0.3, { peak: 0.05 })
+      tone(f * 3, 0.3, 0.35, { peak: 0.045 })
+    }
+  } catch {
+    /* noop */
+  }
+}
+
+/** ポップ: コンボ倍率が上がった瞬間の上昇アルペジオ(段階が上がるほど音数が増える) */
+export const playPopComboUp = (mult) => {
+  try {
+    const base = 660 + mult * 60
+    ;[1, 1.25, 1.5, 2, 2.5].slice(0, Math.min(5, 2 + mult)).forEach((r, i) => tone(base * r, i * 0.06, 0.14, { type: 'triangle', peak: 0.07 }))
+  } catch {
+    /* noop */
+  }
+}
+
+/** ポップ: 読み間違い。やさしい低い2音(罰ではなく「ちがうよ」の合図) */
+export const playPopMiss = () => {
+  try {
+    tone(300, 0, 0.12, { type: 'triangle', peak: 0.07 })
+    tone(240, 0.08, 0.16, { type: 'triangle', peak: 0.06 })
+  } catch {
+    /* noop */
+  }
+}

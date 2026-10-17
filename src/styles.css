@@ -647,7 +647,7 @@ body {
 @keyframes pop-swing { 0%, 100% { transform: translateX(-40px); } 50% { transform: translateX(40px); } }
 
 .pop-toast {
-  position: absolute; left: 50%; top: 26%; transform: translateX(-50%); z-index: 5; pointer-events: none;
+  position: absolute; left: 0; right: 0; margin: 0 auto; width: fit-content; max-width: calc(100% - 16px); top: 26%; z-index: 5; pointer-events: none; /* 中央寄せにtransformを使わない(登場アニメのscaleに上書きされて右にずれるため) */
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 24px; border-radius: 24px;
   background: var(--bg); border: 1px solid var(--line); box-shadow: 0 14px 36px var(--shadow);
   font-size: 22px; font-weight: 900; color: var(--accent); animation: pop .4s ease; white-space: nowrap;
@@ -714,3 +714,31 @@ body {
 .pop-stages .pop-stage { padding: 8px 2px; gap: 3px; }
 .pop-stages .pop-stage strong { font-size: 11px; line-height: 1.2; }
 .pop-stages .pop-stage .pop-stage-no { font-size: 10px; }
+
+/* ポップ: コンボ・演出 */
+.pop-combo {
+  position: absolute; top: 8px; left: 10px; z-index: 6; pointer-events: none; display: flex; align-items: baseline; gap: 5px;
+  padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 900; letter-spacing: .04em; color: #fff;
+  background: rgba(8, 12, 20, .78); border: 2px solid var(--cc, #fff); box-shadow: 0 0 14px color-mix(in srgb, var(--cc, #fff) 55%, transparent);
+  animation: pop-bump .28s ease-out;
+}
+.pop-combo b { font-size: 22px; line-height: 1; color: var(--cc, #fff); }
+.pop-combo span { color: var(--cc, #fff); font-size: 15px; }
+.pop-combo.m1 { --cc: #ffffff; }
+.pop-combo.m2 { --cc: #ffd966; }
+.pop-combo.m3 { --cc: #ff9a2e; }
+.pop-combo.m4 { --cc: #ff5a5a; }
+.pop-combo.m5 { --cc: #e0409a; }
+@keyframes pop-bump { 0% { transform: scale(.6); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.pop-toast.miss { color: #ff8a8a; border-color: rgba(255, 110, 110, .45); font-size: 18px; }
+.pop-toast.miss small { color: var(--text); font-size: 13px; font-family: "Noto Sans Devanagari", system-ui, sans-serif; }
+.pop-stats { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--muted); font-weight: 700; }
+.pop-stats strong { color: var(--text); font-size: 16px; }
+.pop-stats em { color: var(--accent); font-style: normal; font-size: 11px; }
+.pop-confetti { position: absolute; inset: 0; z-index: 7; overflow: hidden; pointer-events: none; border-radius: 26px; }
+.pop-confetti span { position: absolute; top: -14px; opacity: 0; animation-name: pop-fall; animation-timing-function: linear; animation-fill-mode: forwards; }
+@keyframes pop-fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(720px) rotate(540deg); opacity: .9; } }
+@media (prefers-reduced-motion: reduce) {
+  .pop-combo { animation: none; }
+  .pop-confetti { display: none; }
+}

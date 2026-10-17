@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PopEngine } from '../lib/popEngine'
 import { POP_STAGES, popStage, shade, withAlpha } from '../data/popStages'
-import { loadPop, savePop, addExp, expToNext, recordBest, markCleared, recordKey } from '../lib/popStore'
+import { loadPop, savePop, addExp, expToNext, recordBest, markCleared, recordKey, recordCombo } from '../lib/popStore'
 import { hasHindiVoice, speakText } from '../lib/speech'
 import { unlockAudio } from '../lib/sfx'
 import { FINAL_TIERS, FINALS_TO_CLEAR } from '../lib/popFinal'
@@ -29,6 +29,39 @@ function Bubble({ item, size = 40, active = false, dim = false, hideLabel = fals
   )
 }
 
+// ステージクリアの紙吹雪(CSSアニメーション。表示のたびに位置と色を作り直す)
+const CONFETTI_COLORS = ['#ffd966', '#ff9a2e', '#ff5a5a', '#e0409a', '#a070ff', '#38d0f0', '#3ddc84']
+function Confetti() {
+  const [pieces] = useState(() =>
+    Array.from({ length: 36 }, (_, i) => ({
+      left: Math.random() * 100,
+      delay: Math.random() * 0.5,
+      dur: 1.1 + Math.random() * 0.9,
+      size: 6 + Math.random() * 7,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      round: i % 3 === 0,
+    })),
+  )
+  return (
+    <div className="pop-confetti" aria-hidden="true">
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          style={{
+            left: `${p.left}%`,
+            width: p.size,
+            height: p.round ? p.size : p.size * 1.6,
+            background: p.color,
+            borderRadius: p.round ? '50%' : 2,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.dur}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 function HowTo({ mode, onClose }) {
   return (
     <div className="pop-overlay" onClick={onClose}>
@@ -41,11 +74,13 @@ function HowTo({ mode, onClose }) {
               <li>メダルには<b>文字面</b>(क)と<b>読み面</b>(ka)があります。<b>同じ文字の「文字面 + 読み面」</b>がぶつかると合体して、次の文字に進化します。</li>
               <li>色も大きさも全部同じです。<b>文字を読んで</b>、対応する相手の隣に落としましょう。同じ面どうしは合体しません。</li>
               <li>落とす・合体するたびにヒンディー語で読み上げるので、合っていたか耳でも確認できます。</li>
+              <li>🔥 正しいペアを続けて合体させると<b>コンボ</b>になり、3コンボごとに得点の倍率が上がります(最大×5)。別の文字の読みに触れて<b>読み間違える</b>と、コンボが途切れて、2つの文字の読みを教えます(罰はそれだけです)。</li>
             </>
           ) : (
             <>
               <li>同じ文字どうしがぶつかると合体して、次の文字に進化します。</li>
               <li>ステージの5文字がまんべんなく降ってきます。落とす・合体するたびにヒンディー語で読み上げるので、音と形をセットで覚えましょう。</li>
+              <li>🔥 6秒以内に次の合体を続けると<b>コンボ</b>になり、3コンボごとに得点の倍率が上がります(最大×5)。</li>
             </>
           )}
           <li>点線より上に積み上がるとゲームオーバーです。</li>
@@ -75,9 +110,11 @@ export default function PopGame({ onBack }) {
   const [help, setHelp] = useState(false)
   const [score, setScore] = useState(0)
   const [next, setNext] = useState({ level: 0, face: 0 }) // 次に降るメダル
+  const [combo, setCombo] = useState({ n: 0, mult: 1 }) // 読みコンボ
+  const [confetti, setConfetti] = useState(0) // ステージクリアの紙吹雪(表示するたびに値を変えて再生成)
   const [tier, setTier] = useState(0) // このステージで最終形が育った最高の段階(0=最終形/1=👑/2=💎/3=🌈)
   const [unlocked, setUnlocked] = useState(0) // このプレイで到達した最大レベル
-  const [over, setOver] = useState(null) // { score, grand }
+  const [over, setOver] = useState(null) // { score, grand, maxCombo, misses, newCombo }
   const [hint, setHint] = useState(true)
   const [toast, setToast] = useState(null) // { kind: 'level'|'clear', ... }
 
@@ -116,6 +153,20 @@ export default function PopGame({ onBack }) {
       onNext: setNext,
       onFirstInteract: () => setHint(false),
       onUnlock: (lv) => setUnlocked((u) => Math.max(u, lv)),
+      onCombo: (n, mult) => setCombo({ n, mult }),
+      // 読み間違い: コンボが途切れるだけ(罰は軽く)。間違えやすい2文字の読みを並べて教える
+      onMiss: ({ hadCombo, dropped, other }) => {
+        const a = stage.chars[dropped.level]
+        const b = stage.chars[other.level]
+        showToast(
+          {
+            kind: 'miss',
+            text: hadCombo >= 3 ? `✗ コンボ ${hadCombo} が途切れた` : '✗ ちがうよ',
+            sub: `${a.glyph} = ${a.label}  ／  ${b.glyph} = ${b.label}`,
+          },
+          2000,
+        )
+      },
       onMerge: (lv) => {
         const { next, gained } = addExp(saveRef.current, lv + 1)
         commit(next)
@@ -137,6 +188,7 @@ export default function PopGame({ onBack }) {
       },
       // 🌈+🌈 が合体してステージクリア。次のステージがあれば自動で進む
       onStageClear: () => {
+        setConfetti(Date.now())
         commit(markCleared(saveRef.current, key))
         if (stageId < POP_STAGES.length) {
           const nextStage = popStage(stageId + 1)
@@ -150,9 +202,11 @@ export default function PopGame({ onBack }) {
           advanceTimer.current = setTimeout(() => engine.finish(true), 1200)
         }
       },
-      onFinish: (s, grand) => {
-        commit(recordBest(saveRef.current, key, s))
-        setOver({ score: s, grand: !!grand })
+      onFinish: (s, grand, stats = {}) => {
+        const withBest = recordBest(saveRef.current, key, s)
+        const { next, isNew } = recordCombo(withBest, key, stats.maxCombo || 0)
+        commit(next)
+        setOver({ score: s, grand: !!grand, maxCombo: stats.maxCombo || 0, misses: stats.misses || 0, newCombo: isNew })
       },
     }, gameMode)
     engine.mount(canvasRef.current)
@@ -167,6 +221,8 @@ export default function PopGame({ onBack }) {
     setScore(0)
     setUnlocked(0)
     setTier(0)
+    setCombo({ n: 0, mult: 1 })
+    setConfetti(0)
     setOver(null)
     setToast(null)
   }
@@ -299,14 +355,20 @@ export default function PopGame({ onBack }) {
       <div className="pop-field">
         <canvas ref={canvasRef} className="pop-canvas" />
         {hint && !over && <div className="pop-hand">👆</div>}
+        {combo.n >= 2 && !over && (
+          <div key={combo.n} className={`pop-combo m${combo.mult}`}>
+            🔥 <b>{combo.n}</b> COMBO <span>×{combo.mult}</span>
+          </div>
+        )}
+        {confetti > 0 && <Confetti key={confetti} />}
 
         {toast?.kind === 'level' && (
           <div className="pop-toast">
             ✨ Lv {toast.level} ✨
           </div>
         )}
-        {(toast?.kind === 'tier' || toast?.kind === 'clear') && (
-          <div className="pop-toast">{toast.text}<small>{toast.sub}</small></div>
+        {(toast?.kind === 'tier' || toast?.kind === 'clear' || toast?.kind === 'miss') && (
+          <div className={`pop-toast ${toast.kind === 'miss' ? 'miss' : ''}`}>{toast.text}<small>{toast.sub}</small></div>
         )}
 
         {over && (
@@ -317,6 +379,10 @@ export default function PopGame({ onBack }) {
                 <span>SCORE</span>
                 <strong>{over.score}</strong>
                 <small>BEST {Math.max(save.best[recordKey(mode, stageId)] || 0, over.score)}</small>
+              </div>
+              <div className="pop-stats">
+                <span>🔥 最大コンボ <strong>{over.maxCombo}</strong>{over.newCombo && <em> NEW!</em>}</span>
+                {mode === 'read' && <span>✗ 読み間違い <strong>{over.misses}</strong></span>}
               </div>
               <p className="pop-learned">今回出会った文字</p>
               <div className="pop-learned-row">

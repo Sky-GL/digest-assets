@@ -196,33 +196,26 @@ export default function PopGame({ onBack }) {
   }
 
   // ---------- タイトル(ステージ選択) ----------
+  // スマホで一画面に収まるよう、PLAYはモード選択の直下(ステージ一覧より上)に置く。
   if (phase === 'title') {
+    const bestHere = save.best[recordKey(mode, stageId)] || 0
     return (
       <div className="screen pop">
-        <div className="screen-head">
-          <button className="btn ghost" onClick={onBack}>← マップ</button>
+        <div className="pop-topbar">
+          <button className="btn ghost sm" onClick={onBack}>← マップ</button>
+          <div className="pop-topbar-right">
+            <span className="pop-pill sm">Lv <strong>{save.level}</strong></span>
+            {bestHere > 0 && <span className="pop-pill sm">👑 <strong>{bestHere}</strong></span>}
+            <button className="btn ghost sm" onClick={() => setHelp(true)} aria-label="あそびかた">❓</button>
+          </div>
         </div>
         <div className="pop-title">
-          <div className="pop-hero">
-            {popStage(1).chars.slice(0, 5).map((c, i) => (
-              <span key={c.glyph} style={{ animation: `pop-bounce 1.8s ease-in-out ${i * 0.12}s infinite` }}>
-                <Bubble item={c} size={46 + i * 5} />
-              </span>
-            ))}
-          </div>
           <h1>デーヴァナーガリー・ポップ</h1>
-          <p className="pop-tag">MERGE · EVOLVE · MASTER DEVANAGARI</p>
-          <div className="pop-pills">
-            <span className="pop-pill">Lv <strong>{save.level}</strong></span>
-            {save.best[recordKey(mode, stageId)] > 0 && (
-              <span className="pop-pill">👑 <strong>{save.best[recordKey(mode, stageId)]}</strong></span>
-            )}
-          </div>
 
           <div className="pop-modes">
             <button className={`pop-mode ${mode === 'read' ? 'sel' : ''}`} onClick={() => commit({ ...saveRef.current, mode: 'read' })}>
               <strong>📖 読みモード</strong>
-              <span>文字 <b>क</b> と読み <b>ka</b> のペアで合体。色も大きさも同じなので、文字を読まないと進めません</span>
+              <span>文字 <b>क</b> と読み <b>ka</b> のペアで合体。文字を読まないと進めません</span>
             </button>
             <button className={`pop-mode ${mode === 'normal' ? 'sel' : ''}`} onClick={() => commit({ ...saveRef.current, mode: 'normal' })}>
               <strong>🫧 ふつう</strong>
@@ -230,6 +223,15 @@ export default function PopGame({ onBack }) {
             </button>
           </div>
 
+          <button className="btn primary big pulse pop-play" onClick={play}>
+            <span className="pop-play-main">▶ PLAY</span>
+            <span className="pop-play-sub">
+              STAGE {stageId} {stage.title}
+              <span className="pop-play-glyphs">{stage.chars.map((c) => c.glyph).join(' ')}</span>
+            </span>
+          </button>
+
+          <p className="pop-pick">ステージを選ぶ</p>
           <div className="pop-stages">
             {POP_STAGES.map((s) => (
               <button
@@ -237,16 +239,13 @@ export default function PopGame({ onBack }) {
                 className={`pop-stage ${s.id === stageId ? 'sel' : ''}`}
                 onClick={() => setStageId(s.id)}
               >
-                <Bubble item={s.chars[0]} size={44} />
-                <span className="pop-stage-no">STAGE {s.id}{save.cleared[recordKey(mode, s.id)] ? ' ★' : ''}</span>
+                <Bubble item={s.chars[0]} size={38} hideLabel />
+                <span className="pop-stage-no">{s.id}{save.cleared[recordKey(mode, s.id)] ? ' ★' : ''}</span>
                 <strong>{s.title}</strong>
-                <span className="pop-stage-sub">{s.subtitle}</span>
               </button>
             ))}
           </div>
 
-          <button className="btn primary big pulse" onClick={play}>▶ PLAY</button>
-          <button className="btn ghost" onClick={() => setHelp(true)}>❓ あそびかた</button>
           {!hasHindiVoice() && (
             <p className="pop-note">
               この端末にはヒンディー語(hi-IN)の音声が無いため、読み上げは鳴りません。ゲームは遊べます。

@@ -641,9 +641,9 @@ body {
 .pop-exp { flex: 1; height: 9px; border-radius: 99px; background: var(--panel-2); overflow: hidden; }
 .pop-exp div { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .4s; }
 
-.pop-field { position: relative; display: flex; justify-content: center; height: clamp(380px, calc(100dvh - 320px), 700px); }
+.pop-field { position: relative; display: flex; justify-content: center; height: clamp(380px, calc(100dvh - 358px), 700px); }
 .pop-canvas { height: 100%; width: auto; max-width: 100%; aspect-ratio: 420 / 660; touch-action: none; border-radius: 26px; background: #0a1019; cursor: pointer; }
-.pop-hand { position: absolute; top: 76px; left: 0; right: 0; text-align: center; font-size: 44px; opacity: .75; pointer-events: none; animation: pop-swing 1.6s ease-in-out infinite; }
+.pop-hand { position: absolute; top: 200px; left: 0; right: 0; text-align: center; font-size: 44px; opacity: .75; pointer-events: none; animation: pop-swing 1.6s ease-in-out infinite; }
 @keyframes pop-swing { 0%, 100% { transform: translateX(-40px); } 50% { transform: translateX(40px); } }
 
 .pop-toast {
@@ -717,8 +717,8 @@ body {
 
 /* ポップ: コンボ・演出 */
 .pop-combo {
-  position: absolute; top: 8px; left: 10px; z-index: 6; pointer-events: none; display: flex; align-items: baseline; gap: 5px;
-  padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 900; letter-spacing: .04em; color: #fff;
+  display: flex; align-items: baseline; gap: 5px;
+  padding: 3px 12px; border-radius: 999px; font-size: 13px; font-weight: 900; letter-spacing: .04em; color: #fff;
   background: rgba(8, 12, 20, .78); border: 2px solid var(--cc, #fff); box-shadow: 0 0 14px color-mix(in srgb, var(--cc, #fff) 55%, transparent);
   animation: pop-bump .28s ease-out;
 }
@@ -742,3 +742,7 @@ body {
   .pop-combo { animation: none; }
   .pop-confetti { display: none; }
 }
+
+/* ポップ: コンボ表示は盤面の外(専用の行)に置く */
+.pop-combo-row { height: 34px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+.pop-combo-hint { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted); opacity: .6; }

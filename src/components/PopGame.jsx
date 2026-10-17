@@ -352,14 +352,20 @@ export default function PopGame({ onBack }) {
         <span className="pop-pill sm">👑 <strong>{Math.max(save.best[recordKey(mode, stageId)] || 0, 0)}</strong></span>
       </div>
 
-      <div className="pop-field">
-        <canvas ref={canvasRef} className="pop-canvas" />
-        {hint && !over && <div className="pop-hand">👆</div>}
-        {combo.n >= 2 && !over && (
+      {/* コンボは盤面の外に出す(盤面の中に置くと、上部を左右に動く「次のメダル」を隠すため)。高さは固定してレイアウトを揺らさない */}
+      <div className="pop-combo-row">
+        {combo.n >= 2 && !over ? (
           <div key={combo.n} className={`pop-combo m${combo.mult}`}>
             🔥 <b>{combo.n}</b> COMBO <span>×{combo.mult}</span>
           </div>
+        ) : (
+          <span className="pop-combo-hint">合体を続けるとコンボ!</span>
         )}
+      </div>
+
+      <div className="pop-field">
+        <canvas ref={canvasRef} className="pop-canvas" />
+        {hint && !over && <div className="pop-hand">👆</div>}
         {confetti > 0 && <Confetti key={confetti} />}
 
         {toast?.kind === 'level' && (

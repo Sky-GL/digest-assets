@@ -327,8 +327,7 @@ export default function PopGame({ onBack }) {
       <div className="pop-chain">
         {stage.chars.map((c, i) => (
           <span key={c.glyph} className="pop-chain-item">
-            {/* 読みモードでは、まだ出ていない文字のローマ字は隠す(進化バーが答えの一覧にならないように) */}
-            <Bubble item={c} size={42} active={i === nextLevel} dim={i > unlocked} hideLabel={mode === 'read' && i > unlocked} />
+            <Bubble item={c} size={42} active={i === nextLevel} dim={i > unlocked} />
             <span className="pop-arrow">▸</span>
           </span>
         ))}

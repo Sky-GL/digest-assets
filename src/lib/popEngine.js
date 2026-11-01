@@ -185,10 +185,10 @@ export const drawMedal = (ctx, x, y, item, { scale = 1, alpha = 1, squash = 0, i
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   const inner = s - rw
-  let size = inner * (showLabel ? 1.0 : item.latin ? 0.95 : 1.12)
+  let size = inner * (showLabel ? 1.0 : item.latin ? 1.15 : 1.12)
   ctx.font = `${item.latin ? 800 : 700} ${size}px ${family}`
   const w = ctx.measureText(item.glyph).width
-  const maxW = inner * (item.latin ? 1.45 : 1.55)
+  const maxW = inner * (item.latin ? 1.7 : 1.55)
   if (w > maxW) {
     size *= maxW / w
     ctx.font = `${item.latin ? 800 : 700} ${size}px ${family}`

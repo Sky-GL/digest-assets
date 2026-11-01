@@ -21,7 +21,7 @@ function Bubble({ item, size = 40, active = false, dim = false, hideLabel = fals
         boxShadow: `0 0 ${size * 0.25}px ${withAlpha(item.base, 0.5)}`,
       }}
     >
-      <span className="pop-b-glyph" style={{ fontSize: size * (long ? 0.38 : showLabel ? 0.44 : 0.58) }}>{item.glyph}</span>
+      <span className="pop-b-glyph" style={{ fontSize: size * (long ? 0.38 : showLabel ? 0.4 : 0.58) }}>{item.glyph}</span>
       {showLabel && (
         <span className="pop-b-label" style={{ fontSize: Math.max(12, size * 0.3), color: shade(item.base, 0.65) }}>{item.label}</span>
       )}

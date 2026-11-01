@@ -8,7 +8,10 @@ Stepにロックは無く、どのStepからでも自由に始められる。
 npm install
 npm run dev      # http://localhost:5173
 npm run build    # dist/ を出力
+npm run verify   # lint(レイヤー境界) + データ整合性テスト + ビルド + 全画面スモーク
 ```
+
+エージェント(Claude Code 等)向けの作業ルールは `CLAUDE.md`、画面への到達方法・再現手順は `docs/FEATURE_MAP.md`。
 
 ## 学習カリキュラム(全62文字)
 
